@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>KCDB · Kenya Children Data Hub</title>
+<style>
+/* No external dependencies - using system fonts */
+/* Hide Font Awesome icons if not loaded, replace with emoji */
+.fa, .fa-solid, .fa-regular, [class*="fa-"] { 
+  font-style: normal !important;
+  font-weight: normal !important;
+  display: inline !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+/* Replace specific icons with emoji using content */
+.fa-moon::before { content: '🌙'; }
+.fa-sun::before { content: '☀️'; }
+.fa-bell::before { content: '🔔'; }
+.fa-right-from-bracket::before { content: '→'; }
+.fa-fingerprint::before { content: '👆'; }
+.fa-gauge-high::before { content: '📊'; }
+.fa-user-plus::before { content: '👤'; }
+.fa-folder-open::before { content: '📂'; }
+.fa-triangle-exclamation::before { content: '⚠️'; }
+.fa-list-check::before { content: '✓'; }
+.fa-chart-line::before { content: '📈'; }
+.fa-building-columns::before { content: '🏛️'; }
+.fa-shield-halved::before { content: '🛡️'; }
+.fa-plus::before { content: '+'; }
+.fa-magnifying-glass::before { content: '🔍'; }
+.fa-lock::before { content: '🔒'; }
+.fa-eye::before { content: '👁️'; }
+.fa-copy::before { content: '📋'; }
+.fa-file-export::before { content: '💾'; }
+.fa-floppy-disk::before { content: '💾'; }
+.fa-box-archive::before { content: '📦'; }
+.fa-circle-check::before { content: '✓'; }
+.fa-circle-xmark::before { content: '✕'; }
+.fa-circle-exclamation::before { content: '⚠️'; }
+.fa-check-double::before { content: '✓✓'; }
+.fa-check::before { content: '✓'; }
+.fa-circle-info::before { content: 'ℹ'; }
+.fa-clock::before { content: '🕐'; }
+.fa-bell-slash::before { content: '🔕'; }
+/* Hide the original text inside i tags and show emoji */
+i.fa { 
+  font-size: 1em; 
+  line-height: 1;
+  font-style: normal;
+}
+</style>
+<style>
+/* ════════════════════════════════════════════════
+   DESIGN TOKENS — DARK & LIGHT
+════════════════════════════════════════════════ */
+:root {
+  --tr: .2s cubic-bezier(.4,0,.2,1);
+  --hh: 60px; --sw: 256px; --bh: 66px;
+  --r: 10px; --rl: 14px; --rxl: 20px;
+}
+
+/* DARK MODE (default) */
+[data-theme="dark"] {
+  --bg:      #080f1e;
+  --bg2:     #0c1628;
+  --bg3:     #111d34;
+  --bg4:     #16243d;
+  --bg5:     #1d2e4a;
+  --surface: #0e1a2e;
+  --surface2:#132033;
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(71,157,212,.28);
+  --border3: rgba(71,157,212,.12);
+  --text:    #e8f0f8;
+  --text2:   #8daabf;
+  --text3:   #4a6278;
+  --text4:   #2e4358;
+  --teal:    #47b5d4;
+  --teal2:   #2e9ab8;
+  --teal3:   rgba(71,181,212,.14);
+  --teal4:   rgba(71,181,212,.07);
+  --gold:    #d4a847;
+  --rose:    #e05570;
+  --sky:     #5aa4d4;
+  --mint:    #58c49a;
+  --shadow:  0 4px 32px rgba(0,0,0,.5);
+  --sh2:     0 1px 8px rgba(0,0,0,.3);
+  --glow:    0 0 0 3px rgba(71,181,212,.18);
+  --logo-bg: linear-gradient(135deg, #2e9ab8, #1a6888);
+  --scrollbar: #1d2e4a;
+}
+
+/* LIGHT MODE */
+[data-theme="light"] {
+  --bg:      #f5f7fa;
+  --bg2:     #ffffff;
+  --bg3:     #eef1f6;
+  --bg4:     #e4eaf2;
+  --bg5:     #d8e0ec;
+  --surface: #ffffff;
+  --surface2:#f8fafc;
+  --border:  rgba(0,0,0,.08);
+  --border2: rgba(0,115,168,.25);
+  --border3: rgba(0,115,168,.10);
+  --text:    #111827;
+  --text2:   #374151;
+  --text3:   #6b7280;
+  --text4:   #9ca3af;
+  --teal:    #0073a8;
+  --teal2:   #005a84;
+  --teal3:   rgba(0,115,168,.10);
+  --teal4:   rgba(0,115,168,.05);
+  --gold:    #b07d1a;
+  --rose:    #c73a52;
+  --sky:     #2563a8;
+  --mint:    #1a7a52;
+  --shadow:  0 2px 20px rgba(0,0,0,.08);
+  --sh2:     0 1px 4px rgba(0,0,0,.06);
+  --glow:    0 0 0 3px rgba(0,115,168,.14);
+  --logo-bg: linear-gradient(135deg, #0073a8, #005a84);
+  --scrollbar: #d8e0ec;
+}
+
+/* ════════ RESET ════════ */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0 }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  transition: background var(--tr), color var(--tr);
+}
+::selection { background: var(--teal3); color: var(--text) }
+::-webkit-scrollbar { width: 5px; height: 5px }
+::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px }
+button, select, input, textarea { font-family: 'Inter', sans-serif; color: inherit }
+
+/* Background ambient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 90% 5%, rgba(71,181,212,.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 5% 95%, rgba(71,181,212,.03) 0%, transparent 70%);
+  transition: opacity var(--tr);
+}
+[data-theme="light"] body::before { opacity: 0 }
+body > * { position: relative; z-index: 1 }
+
+/* ════════ LAYOUT ════════ */
+#shell { display: flex; flex-direction: column; min-height: 100dvh }
+#content { display: flex; flex: 1; overflow: hidden }
+
+/* ════════ HEADER ════════ */
+#hdr {
+  height: var(--hh);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 400;
+  flex-shrink: 0;
+  box-shadow: var(--sh2);
+  transition: background var(--tr), box-shadow var(--tr);
+}
+
+.logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0 }
+.logo-ic {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--logo-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 2px 12px rgba(71,181,212,.3);
+  flex-shrink: 0;
+}
+.logo-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.2px;
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--teal);
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Header search */
+.hdr-s {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0 14px;
+  max-width: 360px;
+  flex: 1;
+  transition: border-color var(--tr), box-shadow var(--tr);
+}
+.hdr-s:focus-within { border-color: var(--border2); box-shadow: var(--glow) }
+.hdr-s i { color: var(--text3); font-size: 12px; flex-shrink: 0 }
+.hdr-s input { background: none; border: none; outline: none; color: var(--text); font-size: 13px; width: 100%; padding: 9px 0 }
+.hdr-s input::placeholder { color: var(--text3) }
+
+.hdr-r { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0 }
+
+/* Role picker */
+.rp {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 12px 4px 4px;
+  transition: border-color var(--tr);
+  cursor: pointer;
+}
+.rp:focus-within { border-color: var(--border2) }
+.rp-av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700;
+  flex-shrink: 0;
+}
+.rp select {
+  background: none; border: none; outline: none;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; max-width: 140px;
+  -webkit-appearance: none;
+  color: var(--text);
+}
+.rp select option { background: var(--bg3) }
+
+/* Icon buttons */
+.ib {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); cursor: pointer;
+  font-size: 14px;
+  transition: all var(--tr);
+  position: relative;
+  flex-shrink: 0;
+}
+.ib:hover { border-color: var(--border2); color: var(--teal); background: var(--teal4) }
+.ibdg {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 16px; height: 16px;
+  background: var(--rose);
+  border-radius: 99px; border: 2px solid var(--bg2);
+  font-size: 8px; font-weight: 700;
+  display: none; align-items: center; justify-content: center; padding: 0 3px;
+  color: white;
+}
+.ibdg.on { display: flex }
+
+/* Primary button */
+.bg {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 12px; font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 99px; border: none;
+  cursor: pointer; white-space: nowrap;
+  letter-spacing: .2px;
+  transition: all var(--tr);
+  box-shadow: 0 2px 12px rgba(71,181,212,.25);
+}
+.bg:hover { background: var(--teal2); transform: translateY(-1px); box-shadow: 0 4px 18px rgba(71,181,212,.35) }
+
+/* ════════ SIDEBAR ════════ */
+#sidebar {
+  width: var(--sw);
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  overflow-y: auto;
+  transition: background var(--tr);
+}
+.nlbl {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text3);
+  padding: 0 10px;
+  margin: 18px 0 6px;
+}
+.nlbl:first-child { margin-top: 2px }
+
+.ni {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all var(--tr);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  position: relative;
+}
+.ni:hover { background: var(--bg3); color: var(--text) }
+.ni.on {
+  background: var(--teal3);
+  color: var(--teal);
+  border-color: var(--border3);
+  font-weight: 600;
+}
+.ni.on::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  background: var(--teal);
+  border-radius: 0 3px 3px 0;
+}
+.nic { width: 17px; text-align: center; font-size: 13px; flex-shrink: 0 }
+.nbdg {
+  margin-left: auto;
+  padding: 1px 6px; border-radius: 99px;
+  font-size: 9px; font-weight: 700; min-width: 18px; text-align: center;
+}
+.nb-r { background: var(--rose); color: #fff }
+.nb-a { background: var(--teal3); color: var(--teal) }
+
+.sf {
+  margin-top: auto;
+  padding: 12px;
+  background: var(--teal4);
+  border: 1px solid var(--border3);
+  border-radius: var(--r);
+  font-size: 11px;
+}
+.od { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); display: inline-block; animation: pulse 2.5s infinite }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(88,196,154,.4)} 50%{box-shadow:0 0 0 5px transparent} }
+.sf p { font-size: 9.5px; color: var(--text3); margin-top: 5px; line-height: 1.6 }
+
+/* ════════ MAIN ════════ */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 20px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom));
+}
+.pnl { display: none; animation: fi .26s ease }
+.pnl.on { display: block }
+@keyframes fi { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+
+/* ════════ BOTTOM NAV ════════ */
+#bnav {
+  display: none;
+  height: var(--bh);
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 400;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 16px rgba(0,0,0,.1);
+}
+.bni { display: flex; height: 100%; justify-content: space-around; align-items: center }
+.bn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; padding: 6px 8px;
+  border-radius: 10px; transition: all var(--tr);
+  flex: 1;
+  font-size: 9px; font-weight: 600;
+  color: var(--text3);
+  position: relative;
+}
+.bn.on { color: var(--teal) }
+.bn i { font-size: 19px; transition: all var(--tr) }
+.bn.on i { transform: scale(1.1) }
+.bnd { position: absolute; top: 4px; right: calc(50% - 15px); width: 8px; height: 8px; border-radius: 50%; background: var(--rose); border: 2px solid var(--bg2); display: none }
+.bnd.on { display: block }
+
+/* ════════ PAGE HEADER ════════ */
+.ph { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap }
+.ph-t { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.3px; line-height: 1.2 }
+.ph-s { font-size: 12px; color: var(--text3); margin-top: 4px; font-weight: 400 }
+
+/* ════════ STAT CARDS ════════ */
+.sg { display: grid; gap: 14px; margin-bottom: 20px }
+.sg4 { grid-template-columns: repeat(4,1fr) }
+.sg3 { grid-template-columns: repeat(3,1fr) }
+.sg2 { grid-template-columns: repeat(2,1fr) }
+
+.sc {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 18px;
+  position: relative; overflow: hidden;
+  transition: all var(--tr);
+  cursor: default;
+}
+.sc::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--rl) var(--rl) 0 0;
+}
+.sc.tl::after { background: linear-gradient(90deg, var(--teal), var(--sky)) }
+.sc.gd::after { background: linear-gradient(90deg, var(--gold), #e8a320) }
+.sc.rs::after { background: linear-gradient(90deg, var(--rose), #ff8058) }
+.sc.sk::after { background: linear-gradient(90deg, var(--mint), var(--sky)) }
+.sc:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border2) }
+.sc-l { font-size: 9.5px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); margin-bottom: 10px }
+.sc-v { font-size: 32px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; font-family: 'Playfair Display', serif }
+.sc-v.tl { color: var(--teal) }
+.sc-v.gd { color: var(--gold) }
+.sc-v.rs { color: var(--rose) }
+.sc-v.sk { color: var(--mint) }
+.sc-m { font-size: 10.5px; color: var(--text3); margin-top: 8px; display: flex; align-items: center; gap: 5px }
+.tr_ { padding: 2px 7px; border-radius: 99px; font-size: 9px; font-weight: 600 }
+.tu { background: rgba(88,196,154,.12); color: var(--mint) }
+.tw_ { background: rgba(212,168,71,.12); color: var(--gold) }
+.sc-ic { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 40px; opacity: .04 }
+
+/* ════════ CARDS ════════ */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 18px;
+  transition: background var(--tr), border-color var(--tr);
+}
+
+/* ════════ CHART GRID ════════ */
+.cr { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px }
+.cc { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 18px }
+.cc-t { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px }
+.cc-s { font-size: 10.5px; color: var(--text3); margin-bottom: 14px }
+
+/* ════════ TABLE ════════ */
+.tw { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); overflow: hidden }
+.tbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap }
+.sb {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px;
+  flex: 1; min-width: 160px; max-width: 300px;
+  transition: border-color var(--tr), box-shadow var(--tr);
+}
+.sb:focus-within { border-color: var(--border2); box-shadow: var(--glow) }
+.sb i { color: var(--text3); font-size: 11px; flex-shrink: 0 }
+.sb input { background: none; border: none; outline: none; color: var(--text); font-size: 12.5px; width: 100% }
+.sb input::placeholder { color: var(--text3) }
+table { width: 100%; border-collapse: collapse }
+thead tr { background: var(--bg3) }
+th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 9px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 13px 16px; font-size: 12.5px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: middle }
+tbody tr { transition: background var(--tr); cursor: pointer }
+tbody tr:hover { background: var(--bg3) }
+tbody tr:last-child td { border-bottom: none }
+.ut { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--teal) }
+
+/* Mobile cards */
+.ccs { display: none; flex-direction: column }
+.cc_ { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--tr) }
+.cc_:hover { background: var(--bg3) }
+.cc_:last-child { border-bottom: none }
+.ccr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+
+/* ════════ BADGES ════════ */
+.bdg {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 99px;
+  font-size: 9px; font-weight: 700; white-space: nowrap;
+}
+.bA { background: rgba(90,164,212,.1); color: var(--sky); border: 1px solid rgba(90,164,212,.2) }
+.bB { background: rgba(71,181,212,.09); color: var(--teal); border: 1px solid rgba(71,181,212,.2) }
+.bC { background: rgba(224,85,112,.1); color: var(--rose); border: 1px solid rgba(224,85,112,.2) }
+.bD { background: rgba(212,168,71,.1); color: var(--gold); border: 1px solid rgba(212,168,71,.2) }
+.sReg { background: rgba(71,181,212,.1); color: var(--teal); border: 1px solid rgba(71,181,212,.2) }
+.sCare { background: rgba(90,164,212,.1); color: var(--sky); border: 1px solid rgba(90,164,212,.2) }
+.sCourt { background: rgba(212,168,71,.1); color: var(--gold); border: 1px solid rgba(212,168,71,.2) }
+.sDet { background: rgba(224,85,112,.1); color: var(--rose); border: 1px solid rgba(224,85,112,.2) }
+.sRein { background: rgba(88,196,154,.1); color: var(--mint); border: 1px solid rgba(88,196,154,.2) }
+.sDis { background: var(--bg3); color: var(--text3); border: 1px solid var(--border) }
+
+/* ════════ CHIPS ════════ */
+.chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px }
+.chip {
+  padding: 5px 14px; border-radius: 99px; font-size: 11px; font-weight: 600;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; transition: all var(--tr);
+}
+.chip:hover { border-color: var(--border2); color: var(--teal) }
+.chip.on { background: var(--teal3); border-color: var(--border2); color: var(--teal) }
+
+/* ════════ FORMS ════════ */
+.fg { display: flex; flex-direction: column; gap: 5px }
+label { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3) }
+label .req { color: var(--rose); margin-left: 2px }
+.fc {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 13px;
+  color: var(--text); font-size: 13px; outline: none;
+  transition: all var(--tr); width: 100%;
+  -webkit-appearance: none;
+}
+.fc:focus { border-color: var(--border2); box-shadow: var(--glow) }
+.fc::placeholder { color: var(--text3) }
+.fc:required:invalid:not(:placeholder-shown) { border-color: rgba(224,85,112,.5) }
+select.fc {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 13px center;
+  padding-right: 34px; cursor: pointer;
+}
+textarea.fc { resize: vertical; min-height: 80px; line-height: 1.5; font-size: 12.5px }
+.fgg { display: grid; grid-template-columns: 1fr 1fr; gap: 16px }
+.fgf { grid-column: 1/-1 }
+.field-hint { font-size: 10px; color: var(--text3); margin-top: 3px; line-height: 1.4 }
+
+.bsub {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--teal); color: #fff;
+  font-size: 13px; font-weight: 600;
+  padding: 13px 22px; border-radius: 10px; border: none;
+  cursor: pointer; transition: all var(--tr); width: 100%; margin-top: 18px;
+  box-shadow: 0 2px 14px rgba(71,181,212,.25);
+}
+.bsub:hover { background: var(--teal2); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(71,181,212,.35) }
+.bdng {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(224,85,112,.08); border: 1px solid rgba(224,85,112,.25); color: var(--rose);
+  font-size: 12px; font-weight: 600; padding: 12px 20px; border-radius: 10px;
+  cursor: pointer; transition: all var(--tr); width: 100%;
+}
+.bdng:hover { background: rgba(224,85,112,.16) }
+.bsec {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 12px; font-weight: 600;
+  padding: 12px 20px; border-radius: 10px; cursor: pointer; transition: all var(--tr);
+}
+.bsec:hover { border-color: var(--border2); color: var(--teal) }
+
+/* ════════ UCID REVEAL ════════ */
+.ur {
+  background: var(--teal4); border: 1px solid var(--border2);
+  border-radius: var(--rl); padding: 18px; text-align: center;
+  display: none; margin: 16px 0 0;
+}
+.ur.on { display: block; animation: fi .3s ease }
+.url { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 8px }
+.urv { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text); word-break: break-all; line-height: 1.8 }
+.urc {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding: 6px 16px; border-radius: 7px;
+  font-size: 10px; font-weight: 700;
+  background: var(--teal3); border: 1px solid var(--border2);
+  color: var(--teal); cursor: pointer; transition: all var(--tr);
+}
+.urc:hover { background: rgba(71,181,212,.22) }
+
+/* ════════ ALERTS ════════ */
+.ali {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--rl); padding: 16px;
+  transition: all var(--tr); animation: fi .3s ease; margin-bottom: 12px;
+}
+.ali.critical { border-color: rgba(224,85,112,.3); background: rgba(224,85,112,.03) }
+.ali.high { border-color: rgba(212,168,71,.3); background: rgba(212,168,71,.03) }
+.ali.medium { border-color: rgba(90,164,212,.3); background: rgba(90,164,212,.03) }
+.ali-ic { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px }
+.ali-ic.critical { background: rgba(224,85,112,.15); color: var(--rose) }
+.ali-ic.high { background: rgba(212,168,71,.15); color: var(--gold) }
+.ali-ic.medium { background: rgba(90,164,212,.15); color: var(--sky) }
+.ali-b { flex: 1; min-width: 0 }
+.ali-t { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; font-family: 'Playfair Display', serif }
+.ali-d { font-size: 11.5px; color: var(--text2); line-height: 1.5 }
+.ali-m { font-size: 9.5px; color: var(--text3); margin-top: 5px; display: flex; align-items: center; gap: 4px }
+.ali-a { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center }
+.abtn {
+  padding: 6px 14px; border-radius: 7px; font-size: 10.5px; font-weight: 600;
+  cursor: pointer; transition: all var(--tr); border: 1px solid;
+}
+.ar { background: rgba(88,196,154,.1); border-color: rgba(88,196,154,.25); color: var(--mint) }
+.ar:hover { background: rgba(88,196,154,.2) }
+.ad { background: var(--bg3); border-color: var(--border); color: var(--text3) }
+.ad:hover { color: var(--text); border-color: var(--border2) }
+.auth-lock {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--text3);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 10px;
+  cursor: not-allowed;
+}
+
+/* ════════ AUDIT LOG ════════ */
+.audit-wrap { overflow-x: auto }
+.audit-table { width: 100%; border-collapse: collapse; min-width: 780px }
+.audit-table th {
+  padding: 10px 14px;
+  text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text3); background: var(--bg3); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.audit-table td { padding: 10px 14px; font-size: 11.5px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: middle }
+.audit-table tbody tr { transition: background var(--tr) }
+.audit-table tbody tr:hover { background: var(--bg3) }
+.audit-table tbody tr:last-child td { border-bottom: none }
+.at-time { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text3); white-space: nowrap }
+.at-session { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text4) }
+.at-ip { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text3) }
+.auR {
+  padding: 2px 8px; border-radius: 5px;
+  font-size: 8.5px; font-weight: 700; letter-spacing: .8px;
+  white-space: nowrap; flex-shrink: 0; display: inline-block;
+}
+.rPO { background: rgba(90,164,212,.12); color: var(--sky) }
+.rDC { background: rgba(71,181,212,.1); color: var(--teal) }
+.rJU { background: rgba(212,168,71,.12); color: var(--gold) }
+.rNC { background: rgba(168,85,247,.12); color: #c084fc }
+.rSY { background: var(--bg3); color: var(--text3) }
+.at-sev {
+  width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+  flex-shrink: 0; margin-right: 6px;
+}
+.sev-info { background: var(--sky) }
+.sev-warn { background: var(--gold) }
+.sev-crit { background: var(--rose) }
+.at-type { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap }
+.typ-reg { background: rgba(88,196,154,.12); color: var(--mint) }
+.typ-view { background: rgba(90,164,212,.1); color: var(--sky) }
+.typ-edit { background: rgba(212,168,71,.1); color: var(--gold) }
+.typ-auth { background: rgba(168,85,247,.12); color: #c084fc }
+.typ-alert { background: rgba(224,85,112,.1); color: var(--rose) }
+.typ-sys { background: var(--bg3); color: var(--text3) }
+
+/* Audit filter bar */
+.audit-filters { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap }
+.audit-stat-strip { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 16px }
+.ast { padding: 12px 16px; font-size: 10.5px; font-weight: 600; color: var(--text3); border-bottom: 2px solid transparent; cursor: pointer; transition: all var(--tr); white-space: nowrap }
+.ast.on { color: var(--teal); border-bottom-color: var(--teal) }
+
+/* ════════ TIMELINE ════════ */
+.tli { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border) }
+.tli:last-child { border-bottom: none }
+.tld { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-top: 5px; flex-shrink: 0; box-shadow: 0 0 6px rgba(71,181,212,.4) }
+.tlt { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3) }
+.tla { font-size: 11.5px; color: var(--text2); margin-top: 2px; line-height: 1.4 }
+
+/* ════════ AGENCY GRID ════════ */
+.agg { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px }
+.agc {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px; transition: all var(--tr);
+}
+.agc:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: var(--sh2) }
+.agn { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; margin-top: 6px }
+.aga { font-size: 10px; color: var(--text3); display: flex; align-items: center; gap: 5px }
+.dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0 }
+.df { background: var(--mint) }
+.dl { background: var(--gold) }
+.dr { background: var(--sky) }
+
+/* ════════ DATA PROTECTION ════════ */
+.dpg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.dpc {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px;
+  display: flex; gap: 12px; align-items: flex-start;
+  transition: all var(--tr);
+}
+.dpc:hover { border-color: var(--border2) }
+.dpt { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px }
+.dpd { font-size: 10.5px; color: var(--text3); line-height: 1.6 }
+
+/* ════════ PROGRESS ════════ */
+.pb { height: 3px; background: var(--bg3); border-radius: 99px; overflow: hidden; margin-top: 10px }
+.pf { height: 100%; border-radius: 99px; transition: width 1s ease }
+
+/* ════════ EMPTY ════════ */
+.empty { text-align: center; padding: 48px 20px; color: var(--text3) }
+.empty i { font-size: 38px; margin-bottom: 14px; opacity: .2; display: block }
+.empty p { font-size: 12.5px; line-height: 1.5 }
+
+/* ════════ TOAST ════════ */
+#tw { position: fixed; bottom: 80px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; pointer-events: none }
+.toast {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 12.5px; box-shadow: var(--shadow);
+  min-width: 240px; max-width: 320px;
+  animation: fi .3s ease; pointer-events: all;
+}
+.toast.s { border-color: rgba(88,196,154,.35) }
+.toast.e { border-color: rgba(224,85,112,.35) }
+.toast.w { border-color: rgba(212,168,71,.35) }
+.tc { margin-left: auto; cursor: pointer; color: var(--text3); font-size: 16px; padding: 0 2px; flex-shrink: 0 }
+
+/* ════════ MODAL ════════ */
+.mo {
+  display: none; position: fixed; inset: 0;
+  background: rgba(8,15,30,.82); backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 500; align-items: flex-end; justify-content: center;
+}
+.mo.on { display: flex; animation: mofi .22s ease }
+@keyframes mofi { from { opacity: 0 } to { opacity: 1 } }
+.mob {
+  background: var(--bg2); border: 1px solid var(--border);
+  width: 100%; max-width: 660px;
+  border-radius: var(--rxl) var(--rxl) 0 0;
+  padding: 24px 20px;
+  max-height: 92dvh; overflow-y: auto;
+  animation: moup .28s cubic-bezier(.34,1.35,.64,1);
+}
+@keyframes moup { from { transform: translateY(44px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.moh_ { width: 36px; height: 4px; background: var(--bg5); border-radius: 99px; margin: 0 auto 18px }
+.mohd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px }
+.mul { font-size: 8px; font-weight: 700; letter-spacing: 2.2px; text-transform: uppercase; color: var(--teal); margin-bottom: 5px }
+.muv { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text); word-break: break-all; line-height: 1.7 }
+.mox {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text3); cursor: pointer;
+  font-size: 17px; display: flex; align-items: center; justify-content: center;
+  transition: all var(--tr); flex-shrink: 0;
+}
+.mox:hover { background: rgba(224,85,112,.15); color: var(--rose); border-color: rgba(224,85,112,.3) }
+.mos {
+  font-family: 'Playfair Display', serif;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  margin: 16px 0 12px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+.mos:first-of-type { margin-top: 0; padding-top: 0; border-top: none }
+.ig { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.il { font-size: 9px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; color: var(--text3); margin-bottom: 4px }
+.iv { font-size: 13px; color: var(--text); font-weight: 500 }
+.moa { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px }
+
+/* REG LAYOUT */
+.rl_ { display: block }
+
+/* ════════ THEME TOGGLE ════════ */
+.theme-btn {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); cursor: pointer;
+  font-size: 15px;
+  transition: all var(--tr);
+  flex-shrink: 0;
+}
+.theme-btn:hover { border-color: var(--border2); color: var(--gold); background: rgba(212,168,71,.08) }
+
+/* ════════ RESPONSIVE ════════ */
+@media(max-width:900px){
+  #sidebar { display: none }
+  #bnav { display: block }
+  #main { padding-bottom: calc(var(--bh) + 20px + env(safe-area-inset-bottom)) }
+  .sg4 { grid-template-columns: repeat(2,1fr) }
+  .cr { grid-template-columns: 1fr }
+  .agg { grid-template-columns: repeat(2,1fr) }
+  .dpg { grid-template-columns: 1fr }
+  .fgg { grid-template-columns: 1fr }
+  .fgf { grid-column: auto }
+  .moa { grid-template-columns: 1fr }
+  #tw { bottom: calc(var(--bh) + 12px) }
+  .tbl-d { display: none }
+  .ccs { display: flex }
+  .cr.three { grid-template-columns: 1fr }
+}
+@media(max-width:520px){
+  #hdr { padding: 0 12px; gap: 8px }
+  .logo-sub { display: none }
+  .bg span { display: none }
+  .bg { padding: 8px 11px }
+  .sg4, .sg3 { grid-template-columns: repeat(2,1fr) }
+  .agg { grid-template-columns: 1fr 1fr }
+  .ph-t { font-size: 20px }
+  .sc-v { font-size: 28px }
+  .mob { padding: 18px 14px }
+  .moa { grid-template-columns: 1fr }
+  .ig { grid-template-columns: 1fr 1fr }
+  #main { padding: 16px 13px }
+}
+@media(min-width:901px){
+  .hdr-s { display: flex }
+  .tbl-d { display: table }
+  .rl_ { display: grid; grid-template-columns: 1fr 320px; gap: 22px }
+  .mo { align-items: center; padding: 20px }
+  .mob { border-radius: var(--rxl); max-height: 90vh }
+  .moh_ { display: none }
+  .cr.three { grid-template-columns: 2fr 1fr }
+}
+</style>
+</head>
+<body>
+<div id="shell">
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header id="hdr">
+  <div class="logo">
+    <div class="logo-ic">🛡️</div>
+    <div>
+      <div class="logo-name">KCDB</div>
+      <div class="logo-sub">Kenya Children Data Hub</div>
+    </div>
+  </div>
+
+  <div class="hdr-s">
+    🔍
+    <input type="text" id="gSrch" placeholder="Search UCID, county, notes…" oninput="gSearch(this.value)">
+  </div>
+
+  <div class="hdr-r">
+    <div class="rp">
+      <div class="rp-av" id="rAv">JM</div>
+      <select id="roleS" onchange="switchRole(this.value)">
+        <option value="police">Sgt. Kipchoge</option>
+        <option value="dcs" selected>Jane Mwangi</option>
+        <option value="judiciary">Hon. Achieng</option>
+        <option value="nccs">Dr. Maina</option>
+      </select>
+    </div>
+    <div class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode" id="themeBtn">
+      <i class="fa-solid fa-moon"></i>
+    </div>
+    <div class="ib" onclick="goTab('alerts')" title="Alerts">
+      <i class="fa-solid fa-bell"></i>
+      <span class="ibdg" id="hBdg">0</span>
+    </div>
+    <div class="ib" onclick="doLogout()" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></div>
+    <button class="bg" onclick="goTab('register')">
+      <i class="fa-solid fa-fingerprint"></i><span>Generate UCID</span>
+    </button>
+  </div>
+</header>
+
+<div id="content">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<nav id="sidebar">
+  <span class="nlbl">Main</span>
+  <div class="ni on" data-t="dashboard" onclick="goTab('dashboard')"><i class="fa-solid fa-gauge-high nic"></i>Dashboard</div>
+  <div class="ni" data-t="register" onclick="goTab('register')"><i class="fa-solid fa-user-plus nic"></i>Register Child</div>
+  <div class="ni" data-t="cases" onclick="goTab('cases')"><i class="fa-solid fa-folder-open nic"></i>All Cases<span class="nbdg nb-a" id="sN">0</span></div>
+  <span class="nlbl">Monitoring</span>
+  <div class="ni" data-t="alerts" onclick="goTab('alerts')"><i class="fa-solid fa-triangle-exclamation nic"></i>Alerts<span class="nbdg nb-r" id="sA">0</span></div>
+  <div class="ni" data-t="audit" onclick="goTab('audit')"><i class="fa-solid fa-list-check nic"></i>Audit Log</div>
+  <div class="ni" data-t="analytics" onclick="goTab('analytics')"><i class="fa-solid fa-chart-line nic"></i>Analytics</div>
+  <span class="nlbl">System</span>
+  <div class="ni" data-t="agencies" onclick="goTab('agencies')"><i class="fa-solid fa-building-columns nic"></i>Agencies</div>
+  <div class="ni" data-t="dp" onclick="goTab('dp')"><i class="fa-solid fa-shield-halved nic"></i>Data Protection</div>
+  <div class="sf" style="margin-top:auto">
+    <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600"><span class="od"></span>System Online</div>
+    <p>DPA 2019 compliant · All access audited<br>UCID pseudonymised · v3.0</p>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main id="main">
+
+<!-- DASHBOARD -->
+<section class="pnl on" id="tab-dashboard">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Good morning, <span id="dNm">Jane</span></div>
+      <div class="ph-s" id="dDt"></div>
+    </div>
+    <button class="bg" onclick="goTab('register')"><i class="fa-solid fa-plus"></i><span> New Case</span></button>
+  </div>
+
+  <div class="sg sg4">
+    <div class="sc tl">
+      <div class="sc-l">Active Cases</div>
+      <div class="sc-v tl" id="sAc">0</div>
+      <div class="sc-m"><span class="tr_ tu">↑ All time</span></div>
+      <i class="fa-solid fa-folder-open sc-ic"></i>
+    </div>
+    <div class="sc gd">
+      <div class="sc-l">Registered Today</div>
+      <div class="sc-v gd" id="sTd">0</div>
+      <div class="sc-m"><span class="tr_ tu">↑ Today</span></div>
+      <i class="fa-solid fa-user-plus sc-ic"></i>
+    </div>
+    <div class="sc rs">
+      <div class="sc-l">Pending Alerts</div>
+      <div class="sc-v rs" id="sAl">0</div>
+      <div class="sc-m"><span class="tr_ tw_" id="sAlT">Review needed</span></div>
+      <i class="fa-solid fa-bell sc-ic"></i>
+    </div>
+    <div class="sc sk">
+      <div class="sc-l">Discharged</div>
+      <div class="sc-v sk" id="sDi">0</div>
+      <div class="sc-m"><span class="tr_ tu">Anonymised</span></div>
+      <i class="fa-solid fa-circle-check sc-ic"></i>
+    </div>
+  </div>
+
+  <div class="cr">
+    <div class="cc">
+      <div class="cc-t">Cases by Category</div>
+      <div class="cc-s">KCDB category distribution</div>
+      <div style="height:200px;position:relative"><canvas id="cCat"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-t">Status Overview</div>
+      <div class="cc-s">Current state of all registered cases</div>
+      <div style="height:200px;position:relative"><canvas id="cStat"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dG">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Recent Registrations</div>
+        <div onclick="goTab('cases')" style="font-size:11px;color:var(--teal);cursor:pointer;font-weight:600">View all →</div>
+      </div>
+      <div id="recL"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Active Alerts</div>
+        <div onclick="goTab('alerts')" style="font-size:11px;color:var(--rose);cursor:pointer;font-weight:600">View all →</div>
+      </div>
+      <div id="dAl"></div>
+    </div>
+  </div>
+</section>
+
+<!-- REGISTER CHILD -->
+<section class="pnl" id="tab-register">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Register New Child</div>
+      <div class="ph-s">A cryptographic UCID is generated automatically. All starred fields are mandatory.</div>
+    </div>
+  </div>
+  <div class="rl_">
+    <div class="card">
+      <form id="regF" onsubmit="registerChild(event)" novalidate>
+        <div class="fgg">
+
+          <!-- Triggering Event -->
+          <div class="fg">
+            <label>Triggering Event <span class="req">*</span></label>
+            <select class="fc" id="fTr" required>
+              <option value="">— Select event —</option>
+              <option>Arrest / Apprehension by Police</option>
+              <option>Rescue from Trafficking Situation</option>
+              <option>Court Filing (Children's Court)</option>
+              <option>Admission to Children's Institution</option>
+              <option>Health Facility — Child Abuse Referral</option>
+              <option>Complaint Filed with DCS</option>
+              <option>Unaccompanied Child at Border Point</option>
+            </select>
+          </div>
+
+          <!-- Category -->
+          <div class="fg">
+            <label>KCDB Category <span class="req">*</span></label>
+            <select class="fc" id="fCt" required>
+              <option value="">— Select category —</option>
+              <option value="A">A — In Conflict with the Law</option>
+              <option value="B">B — In Contact with the Law</option>
+              <option value="C">C — Trafficked &amp; Exploited</option>
+              <option value="D">D — Unaccompanied / Separated</option>
+            </select>
+          </div>
+
+          <!-- Registering Agency -->
+          <div class="fg">
+            <label>Registering Agency <span class="req">*</span></label>
+            <select class="fc" id="fAg" required>
+              <option value="">— Select agency —</option>
+              <option>Kenya Police Service</option>
+              <option>Dept. of Children Services</option>
+              <option>Judiciary — Children's Court</option>
+              <option>Kenya Immigration Service</option>
+              <option>Ministry of Health</option>
+              <option>NCCS</option>
+              <option>Registered NGO</option>
+            </select>
+          </div>
+
+          <!-- Estimated Age -->
+          <div class="fg">
+            <label>Estimated Age Range <span class="req">*</span></label>
+            <select class="fc" id="fAg2" required>
+              <option value="">— Select range —</option>
+              <option>0–4 years</option>
+              <option>5–9 years</option>
+              <option>10–12 years</option>
+              <option>13–15 years</option>
+              <option>16–17 years</option>
+            </select>
+            <span class="field-hint">No exact date of birth. Pseudonymisation requirement — DPA 2019.</span>
+          </div>
+
+          <!-- County -->
+          <div class="fg">
+            <label>County / Region <span class="req">*</span></label>
+            <select class="fc" id="fCo" required>
+              <option value="">— Select county —</option>
+              <option>Nairobi</option><option>Mombasa</option><option>Kisumu</option>
+              <option>Nakuru</option><option>Eldoret / Uasin Gishu</option><option>Kilifi</option>
+              <option>Kwale</option><option>Garissa</option><option>Machakos</option>
+              <option>Kiambu</option><option>Kakamega</option><option>Nyeri</option><option>Other</option>
+            </select>
+          </div>
+
+          <!-- Status -->
+          <div class="fg">
+            <label>Immediate Status <span class="req">*</span></label>
+            <select class="fc" id="fSt" required>
+              <option value="">— Select status —</option>
+              <option>Registered</option>
+              <option>In Care</option>
+              <option>In Court</option>
+              <option>Detained</option>
+            </select>
+          </div>
+
+          <!-- Legal Aid -->
+          <div class="fg">
+            <label>Legal Aid (S.96 Children Act) <span class="req">*</span></label>
+            <select class="fc" id="fLe" required>
+              <option value="">— Select —</option>
+              <option value="Yes">Yes — Confirmed</option>
+              <option value="No">No — Not required</option>
+              <option value="Pending">Pending Assessment</option>
+            </select>
+          </div>
+
+          <!-- Placement -->
+          <div class="fg">
+            <label>Current Placement <span class="req">*</span></label>
+            <input type="text" class="fc" id="fPl" placeholder="e.g. Kisumu Remand Home, UNHCR Transit Centre…" required minlength="3">
+            <span class="field-hint">Do not include child's name in placement description.</span>
+          </div>
+
+          <!-- Case Notes -->
+          <div class="fg fgf">
+            <label>Case Circumstances <span class="req">*</span></label>
+            <textarea class="fc" id="fNo" required minlength="20"
+              placeholder="Describe anonymously. Include: circumstances of entry, immediate needs, any known risks. Do NOT include real names or tribal identifiers."></textarea>
+            <span class="field-hint">Minimum 20 characters. This record is immutable and audited.</span>
+          </div>
+
+          <!-- Registering Officer ID -->
+          <div class="fg">
+            <label>Registering Officer Service No. <span class="req">*</span></label>
+            <input type="text" class="fc" id="fOff" placeholder="e.g. KPS/2024/001423 or DCS-NRB-0045" required pattern="[A-Za-z0-9\/\-]+" minlength="6">
+          </div>
+
+          <!-- Witness/Supervisor -->
+          <div class="fg">
+            <label>Supervisor / Countersignature <span class="req">*</span></label>
+            <input type="text" class="fc" id="fSup" placeholder="Senior officer or supervisor ID" required minlength="4">
+          </div>
+
+        </div><!-- end fgg -->
+
+        <div class="ur" id="ucidR">
+          <div class="url">UCID Successfully Generated</div>
+          <div class="urv" id="ucidV"></div>
+          <button type="button" class="urc" onclick="copyUCID()">
+            <i class="fa-regular fa-copy"></i> Copy UCID to Clipboard
+          </button>
+        </div>
+
+        <button type="submit" class="bsub">
+          <i class="fa-solid fa-fingerprint"></i> Generate UCID &amp; Register Child
+        </button>
+        <div id="formErr" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(224,85,112,.1);border:1px solid rgba(224,85,112,.3);border-radius:8px;font-size:11.5px;color:var(--rose)"></div>
+      </form>
+    </div>
+
+    <!-- Side panel -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:600;margin-bottom:12px">Category Guide</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="bdg bA" style="margin-top:2px;flex-shrink:0">A</span>
+            <p style="font-size:11.5px;color:var(--text2);line-height:1.5">Children in <strong>conflict</strong> — arrest, remand, conviction, diversion</p>
+          </div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="bdg bB" style="margin-top:2px;flex-shrink:0">B</span>
+            <p style="font-size:11.5px;color:var(--text2);line-height:1.5">Children in <strong>contact</strong> — victim, witness, custody, care proceedings</p>
+          </div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="bdg bC" style="margin-top:2px;flex-shrink:0">C</span>
+            <p style="font-size:11.5px;color:var(--text2);line-height:1.5"><strong>Trafficked / exploited</strong> — FGM, forced labour, sexual exploitation</p>
+          </div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="bdg bD" style="margin-top:2px;flex-shrink:0">D</span>
+            <p style="font-size:11.5px;color:var(--text2);line-height:1.5"><strong>Unaccompanied</strong> — border, asylum, refugee, no known guardian</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--teal4);border-color:var(--border3)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--teal);margin-bottom:8px">🔐 Data Protection</div>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.6">UCID contains <strong>zero personally identifiable data</strong>. Compliant with DPA 2019 &amp; Art. 31, Constitution of Kenya.</p>
+      </div>
+
+      <div class="card" style="background:rgba(224,85,112,.04);border-color:rgba(224,85,112,.2)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rose);margin-bottom:8px"><i class="fa-solid fa-lock" style="margin-right:4px"></i>Mandatory Registration</div>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.6">Failure to register within <strong>24 hours</strong> of a triggering event is a criminal offence under proposed Part XVII, Children Act 2022. Penalty: KES 200,000 or 2 years imprisonment.</p>
+      </div>
+
+      <div class="card" style="background:rgba(212,168,71,.03);border-color:rgba(212,168,71,.2)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px"><i class="fa-solid fa-eye" style="margin-right:4px"></i>This Registration Is Audited</div>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.6">Your service number, session ID, device, and timestamp are permanently recorded. All registrations are reviewed by the KCDB Secretariat within 48 hours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CASES -->
+<section class="pnl" id="tab-cases">
+  <div class="ph">
+    <div>
+      <div class="ph-t">All Registered Cases</div>
+      <div class="ph-s">Select any row to view full record and audit trail</div>
+    </div>
+    <button class="bg" onclick="goTab('register')"><i class="fa-solid fa-plus"></i><span> Register</span></button>
+  </div>
+  <div class="chips" id="catCh">
+    <div class="chip on" data-c="all">All Cases</div>
+    <div class="chip" data-c="A">Cat. A — Conflict</div>
+    <div class="chip" data-c="B">Cat. B — Contact</div>
+    <div class="chip" data-c="C">Cat. C — Trafficked</div>
+    <div class="chip" data-c="D">Cat. D — Unaccompanied</div>
+  </div>
+  <div class="tw">
+    <div class="tbar">
+      <div class="sb"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search UCID, county, notes…" oninput="filterCases(this.value)" id="cSr"></div>
+      <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="stFil" onchange="filterCases(document.getElementById('cSr').value)">
+        <option value="">All Statuses</option>
+        <option>Registered</option><option>In Care</option><option>In Court</option>
+        <option>Detained</option><option>Reintegrated</option><option>Discharged &amp; Anonymised</option>
+      </select>
+    </div>
+    <div class="tbl-d">
+      <table>
+        <thead>
+          <tr>
+            <th>UCID</th><th>Cat.</th><th>Trigger Event</th><th>County</th>
+            <th>Status</th><th>Registering Agency</th><th>Date Registered</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="cBd"></tbody>
+      </table>
+    </div>
+    <div class="ccs" id="cCs"></div>
+    <div class="empty" id="cEm" style="display:none">
+      <i class="fa-solid fa-folder-open"></i>
+      <p>No cases match your search criteria.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ALERTS -->
+<section class="pnl" id="tab-alerts">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Active System Alerts</div>
+      <div class="ph-s">High-priority notifications requiring authorised agency action</div>
+    </div>
+    <div id="dismissAllWrap"></div>
+  </div>
+  <div id="alertPermNote" style="display:none;margin-bottom:14px;padding:12px 16px;background:rgba(212,168,71,.07);border:1px solid rgba(212,168,71,.25);border-radius:10px;font-size:12px;color:var(--gold);display:flex;align-items:center;gap:10px">
+    <i class="fa-solid fa-lock"></i>
+    <span><strong>Alert Dismissal Restricted.</strong> Only the Judiciary and Department of Children Services may dismiss or resolve KCDB alerts. Your role (<span id="roleLbl">—</span>) has read-only access to alerts.</span>
+  </div>
+  <div id="alL"></div>
+</section>
+
+<!-- AUDIT LOG -->
+<section class="pnl" id="tab-audit">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Audit Log</div>
+      <div class="ph-s">Immutable · All access, edits, logins, and alerts permanently recorded · 10-year retention per DPA 2019</div>
+    </div>
+    <button class="bsec" style="width:auto;padding:8px 14px;font-size:11px" onclick="exportAudit()">
+      <i class="fa-solid fa-file-export"></i> Export Log
+    </button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;padding:14px 16px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--teal)" id="auTot">0</div>
+        <div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Total Entries</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--rose)" id="auCrit">0</div>
+        <div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Critical Events</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)" id="auWarn">0</div>
+        <div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Warnings</div>
+      </div>
+      <div style="text-align:center;margin-left:auto">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Session ID</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)" id="sessId">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tw">
+    <div class="audit-filters">
+      <div class="sb"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search entries, users, actions…" oninput="filterAudit(this.value)"></div>
+      <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auRl" onchange="renderAudit()">
+        <option value="">All Roles</option>
+        <option>POLICE</option><option>DCS</option><option>JUDICIARY</option><option>NCCS</option><option>SYSTEM</option>
+      </select>
+      <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auTyp" onchange="renderAudit()">
+        <option value="">All Action Types</option>
+        <option value="Registration">Registration</option>
+        <option value="View">View</option>
+        <option value="Edit">Edit / Update</option>
+        <option value="Auth">Auth / Login</option>
+        <option value="Alert">Alert Action</option>
+        <option value="System">System</option>
+        <option value="Data Minimisation">Discharge</option>
+      </select>
+      <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auSev" onchange="renderAudit()">
+        <option value="">All Severity</option>
+        <option value="info">Info</option>
+        <option value="warn">Warning</option>
+        <option value="crit">Critical</option>
+      </select>
+    </div>
+    <div class="audit-wrap">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Sev.</th>
+            <th>Type</th>
+            <th>Role</th>
+            <th>Officer</th>
+            <th>Session ID</th>
+            <th>Simulated IP</th>
+            <th>Action / Description</th>
+          </tr>
+        </thead>
+        <tbody id="auBd"></tbody>
+      </table>
+    </div>
+    <div id="auEmpty" style="display:none" class="empty">
+      <i class="fa-solid fa-list-check"></i>
+      <p>No audit entries match your filters.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYTICS -->
+<section class="pnl" id="tab-analytics">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Analytics &amp; Reports</div>
+      <div class="ph-s">Aggregate and anonymised data only — no child-identifying information</div>
+    </div>
+  </div>
+  <div class="sg sg3">
+    <div class="sc tl"><div class="sc-l">Total Registered</div><div class="sc-v tl" id="aTt">0</div><div class="pb"><div class="pf" style="background:var(--teal);width:100%"></div></div></div>
+    <div class="sc rs"><div class="sc-l">Trafficking (Cat. C)</div><div class="sc-v rs" id="aCc">0</div><div class="pb"><div class="pf" style="background:var(--rose)" id="pC"></div></div></div>
+    <div class="sc sk"><div class="sc-l">In Court</div><div class="sc-v sk" id="aCt">0</div><div class="pb"><div class="pf" style="background:var(--sky)" id="pCt"></div></div></div>
+  </div>
+  <div class="cr three">
+    <div class="cc"><div class="cc-t">Registrations — Last 14 Days</div><div class="cc-s">Daily new UCID generation</div><div style="height:200px;position:relative"><canvas id="cTm"></canvas></div></div>
+    <div class="cc"><div class="cc-t">County Distribution</div><div class="cc-s">Top counties by case volume</div><div style="height:200px;position:relative"><canvas id="cCo"></canvas></div></div>
+  </div>
+  <div class="cr">
+    <div class="cc"><div class="cc-t">Trigger Events</div><div class="cc-s">How children enter the system</div><div style="height:190px;position:relative"><canvas id="cTg"></canvas></div></div>
+    <div class="cc"><div class="cc-t">Registrations by Agency</div><div class="cc-s">Which agencies generate UCIDs</div><div style="height:190px;position:relative"><canvas id="cAg"></canvas></div></div>
+  </div>
+</section>
+
+<!-- AGENCIES -->
+<section class="pnl" id="tab-agencies">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Mandated Agencies</div>
+      <div class="ph-s">Legally required to access &amp; update KCDB — proposed Part XVII, Children Act 2022</div>
+    </div>
+  </div>
+  <div class="agg">
+    <div class="agc"><div style="font-size:22px">🚔</div><div class="agn">Kenya Police Service</div><div class="aga"><span class="dot df"></span>Full — CICL &amp; rescue cases</div></div>
+    <div class="agc"><div style="font-size:22px">👶</div><div class="agn">Dept. of Children Services</div><div class="aga"><span class="dot df"></span>Full — primary case management</div></div>
+    <div class="agc"><div style="font-size:22px">⚖️</div><div class="agn">The Judiciary</div><div class="aga"><span class="dot df"></span>Full — courts &amp; orders</div></div>
+    <div class="agc"><div style="font-size:22px">📋</div><div class="agn">ODPP</div><div class="aga"><span class="dot df"></span>Full — prosecution files</div></div>
+    <div class="agc"><div style="font-size:22px">🏥</div><div class="agn">Ministry of Health</div><div class="aga"><span class="dot dl"></span>Limited — abuse referrals only</div></div>
+    <div class="agc"><div style="font-size:22px">🛂</div><div class="agn">Kenya Immigration Service</div><div class="aga"><span class="dot dl"></span>Limited — border &amp; Cat. D</div></div>
+    <div class="agc"><div style="font-size:22px">🏛️</div><div class="agn">Dept. Probation &amp; Aftercare</div><div class="aga"><span class="dot dl"></span>Limited — reintegration</div></div>
+    <div class="agc"><div style="font-size:22px">🔒</div><div class="agn">Kenya Prison Service</div><div class="aga"><span class="dot dl"></span>Limited — Cat. A detention</div></div>
+    <div class="agc"><div style="font-size:22px">⚡</div><div class="agn">NGEC</div><div class="aga"><span class="dot dr"></span>Read-only — aggregate stats</div></div>
+    <div class="agc"><div style="font-size:22px">🤝</div><div class="agn">Registered NGOs</div><div class="aga"><span class="dot dr"></span>Read-only — referred cases</div></div>
+    <div class="agc"><div style="font-size:22px">🏠</div><div class="agn">NCCS (National Oversight)</div><div class="aga"><span class="dot df"></span>Full admin — governance</div></div>
+    <div class="agc"><div style="font-size:22px">🌐</div><div class="agn">Gender &amp; Child Protection</div><div class="aga"><span class="dot df"></span>Full — trafficking &amp; GBV</div></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:20px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-size:10.5px;color:var(--text3);flex-wrap:wrap">
+    <span><span class="dot df" style="display:inline-block;margin-right:5px"></span>Full access — all fields</span>
+    <span><span class="dot dl" style="display:inline-block;margin-right:5px"></span>Limited — specific fields only</span>
+    <span><span class="dot dr" style="display:inline-block;margin-right:5px"></span>Read-only — anonymised aggregate</span>
+  </div>
+</section>
+
+<!-- DATA PROTECTION -->
+<section class="pnl" id="tab-dp">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Data Protection Framework</div>
+      <div class="ph-s">Compliance with Data Protection Act 2019 (Cap. 411C) &amp; Art. 31, Constitution of Kenya</div>
+    </div>
+  </div>
+  <div class="dpg">
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">🔐</div><div><div class="dpt">Right to Privacy (Art. 31)</div><div class="dpd">All personal data processed within the constitutional right to privacy. No private family affairs data collected beyond strict necessity.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">⚖️</div><div><div class="dpt">Lawful &amp; Transparent Processing</div><div class="dpd">Processing only under explicit statutory authority (proposed Part XVII, Children Act 2022). Every access event is logged and auditable.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">🎯</div><div><div class="dpt">Purpose Limitation</div><div class="dpd">Data collected solely for child protection and justice delivery. Cannot be used for immigration enforcement or criminal profiling.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">📉</div><div><div class="dpt">Data Minimisation</div><div class="dpd">UCID contains zero personally identifiable data. Automated minimisation strips identifying data upon discharge.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">✅</div><div><div class="dpt">Accuracy &amp; Right to Correct</div><div class="dpd">Parents/guardians may request correction under S.26(d) DPA 2019. All correction requests are logged and tracked.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">🗑️</div><div><div class="dpt">Storage Limitation</div><div class="dpd">Records retained only while the case is active. On discharge, identifying data is permanently anonymised per S.25 DPA 2019.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">🛡️</div><div><div class="dpt">Integrity &amp; Security</div><div class="dpd">End-to-end encryption, role-based access, immutable audit logs, cryptographic UCID generation. 72-hour breach notification to ODPC.</div></div></div>
+    <div class="dpc"><div style="font-size:18px;flex-shrink:0">🌍</div><div><div class="dpt">No Cross-Border Transfer</div><div class="dpd">No KCDB data transferred outside Kenya without approval from the Data Protection Commissioner and NCCS (S.25(h) DPA 2019).</div></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;margin-bottom:14px">Criminal Liability — Proposed Part XVII, Children Act 2022</div>
+    <div style="overflow-x:auto">
+      <table style="min-width:480px">
+        <thead><tr><th>Offence</th><th>Maximum Penalty</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--text)">Unauthorised access to KCDB record</td><td><span class="bdg bB">3 yrs / KES 500,000</span></td></tr>
+          <tr><td style="color:var(--text)">Wilful manipulation / falsification of records</td><td><span class="bdg bC">7 yrs / KES 2,000,000</span></td></tr>
+          <tr><td style="color:var(--text)">Failure to register a qualifying child</td><td><span class="bdg bB">2 yrs / KES 200,000</span></td></tr>
+          <tr><td style="color:var(--text)">Disclosure of UCID to unauthorised persons</td><td><span class="bdg bC">5 yrs / KES 1,000,000</span></td></tr>
+          <tr><td style="color:var(--text)">Official complicity in using KCDB to facilitate trafficking</td><td><span class="bdg bC">Maximum — no fine option</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+</div><!-- #content -->
+
+<!-- ══════════ BOTTOM NAV ══════════ -->
+<nav id="bnav">
+  <div class="bni">
+    <div class="bn on" data-t="dashboard" onclick="goTab('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Home</span></div>
+    <div class="bn" data-t="register" onclick="goTab('register')"><i class="fa-solid fa-user-plus"></i><span>Register</span></div>
+    <div class="bn" data-t="cases" onclick="goTab('cases')"><i class="fa-solid fa-folder-open"></i><span>Cases</span></div>
+    <div class="bn" data-t="alerts" onclick="goTab('alerts')"><i class="fa-solid fa-bell"></i><span>Alerts</span><span class="bnd" id="bnD"></span></div>
+    <div class="bn" data-t="analytics" onclick="goTab('analytics')"><i class="fa-solid fa-chart-line"></i><span>Stats</span></div>
+  </div>
+</nav>
+</div><!-- #shell -->
+
+<!-- ══════════ MODAL ══════════ -->
+<div class="mo" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mob" onclick="event.stopPropagation()">
+    <div class="moh_"></div>
+    <div class="mohd">
+      <div>
+        <div class="mul">Unique Child Identifier</div>
+        <div class="muv" id="mUC"></div>
+      </div>
+      <div class="mox" onclick="closeModal()">×</div>
+    </div>
+    <div class="mos">Case Information</div>
+    <div class="ig">
+      <div><div class="il">Category</div><div class="iv" id="mCa"></div></div>
+      <div><div class="il">Trigger Event</div><div class="iv" id="mTr"></div></div>
+      <div><div class="il">County</div><div class="iv" id="mCo"></div></div>
+      <div><div class="il">Legal Aid Status</div><div class="iv" id="mLe"></div></div>
+      <div><div class="il">Estimated Age</div><div class="iv" id="mAge"></div></div>
+      <div><div class="il">Registering Agency</div><div class="iv" id="mAg"></div></div>
+    </div>
+    <div class="mos">Update Record</div>
+    <div class="fgg">
+      <div class="fg">
+        <label>Status <span class="req">*</span></label>
+        <select class="fc" id="mSt">
+          <option>Registered</option><option>In Care</option><option>In Court</option>
+          <option>Detained</option><option>Reintegrated</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Current Placement</label>
+        <input type="text" class="fc" id="mPl">
+      </div>
+      <div class="fg fgf">
+        <label>Case Notes Update</label>
+        <textarea class="fc" id="mNo" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="mos">Audit Trail</div>
+    <div id="mTl" style="max-height:180px;overflow-y:auto"></div>
+    <div class="moa">
+      <button class="bsub" style="margin-top:0;font-size:12px;padding:12px" onclick="updateChild()">
+        <i class="fa-solid fa-floppy-disk"></i> Save Updates
+      </button>
+      <button class="bdng" onclick="dischargeChild()">
+        <i class="fa-solid fa-box-archive"></i> Discharge &amp; Anonymise
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="tw"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+const SESSION_ID = 'SID-' + Math.random().toString(36).substr(2,9).toUpperCase();
+const SIM_IPS = ['41.204.16.','196.201.212.','105.160.35.','41.90.64.','197.232.55.'];
+function simIP(role){ const b=SIM_IPS[['police','dcs','judiciary','nccs','system'].indexOf(role)%SIM_IPS.length]; return b+(Math.floor(Math.random()*200)+1); }
+
+const S = {
+  role: 'dcs', user: 'Jane Mwangi',
+  children: [], audit: [], alerts: [],
+  activeModal: null, catF: 'all',
+  cI: false, aI: false,
+  theme: 'dark'
+};
+
+const R = {
+  police:   { name:'Sgt. Kipchoge', ini:'SK', col:'#5aa4d4', lbl:'POLICE',    canDismiss:false },
+  dcs:      { name:'Jane Mwangi',   ini:'JM', col:'#47b5d4', lbl:'DCS',       canDismiss:true  },
+  judiciary:{ name:'Hon. Achieng',  ini:'HA', col:'#d4a847', lbl:'JUDICIARY', canDismiss:true  },
+  nccs:     { name:'Dr. Maina',     ini:'DM', col:'#c084fc', lbl:'NCCS',      canDismiss:false },
+};
+
+/* severity helper */
+function evSev(type,msg){
+  if(['Data Minimisation','Alert'].includes(type) || (msg||'').toLowerCase().includes('discharge')) return 'crit';
+  if(['Registration','Edit'].includes(type)) return 'warn';
+  return 'info';
+}
+
+/* ══════════ THEME ══════════ */
+function toggleTheme(){
+  S.theme = S.theme==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', S.theme);
+  document.getElementById('themeBtn').innerHTML = S.theme==='dark'
+    ? '🌙'
+    : '☀️';
+  document.querySelector('meta[name="theme-color"]').content = S.theme==='dark' ? '#080f1e' : '#f5f7fa';
+  logA('Theme switched to ' + S.theme + ' mode', 'System', 'info');
+}
+
+/* ══════════ NAVIGATION ══════════ */
+function goTab(t){
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('[data-t]').forEach(n=>n.classList.remove('on'));
+  const tab = document.getElementById('tab-'+t);
+  if(tab) tab.classList.add('on');
+  document.querySelectorAll('[data-t="'+t+'"]').forEach(n=>n.classList.add('on'));
+  renderAll();
+  if(t==='analytics') setTimeout(initAnalyticsCharts, 80);
+  if(t==='audit') updateAuditStats();
+  window.scrollTo({top:0, behavior:'smooth'});
+  updateAlertPermUI();
+}
+
+/* ══════════ ROLE SWITCH ══════════ */
+function switchRole(r){
+  S.role=r; const cfg=R[r]; S.user=cfg.name;
+  const av=document.getElementById('rAv');
+  av.textContent=cfg.ini;
+  av.style.background=cfg.col+'22';
+  av.style.color=cfg.col;
+  document.getElementById('dNm').textContent=cfg.name.split(' ')[0];
+  logA(`Signed in as ${cfg.lbl} — ${cfg.name}`, 'Auth', 'warn');
+  toast('s','Signed in as '+cfg.name,'Session: '+SESSION_ID);
+  renderAll(); updateAlertPermUI();
+}
+
+function updateAlertPermUI(){
+  const canDismiss = R[S.role].canDismiss;
+  const note = document.getElementById('alertPermNote');
+  if(note){
+    note.style.display = canDismiss ? 'none' : 'flex';
+    const rl=document.getElementById('roleLbl'); if(rl) rl.textContent=R[S.role].lbl;
+  }
+  const daw = document.getElementById('dismissAllWrap');
+  if(daw){
+    daw.innerHTML = canDismiss
+      ? `<button class="bsec" style="width:auto;padding:8px 14px;font-size:11px" onclick="dismissAll()"><i class="fa-solid fa-check-double"></i> Dismiss All</button>`
+      : `<div class="auth-lock"><i class="fa-solid fa-lock"></i> Dismiss restricted to DCS &amp; Judiciary</div>`;
+  }
+}
+
+/* ══════════ REGISTER CHILD ══════════ */
+function registerChild(e){
+  e.preventDefault();
+  const g = id => document.getElementById(id);
+  const err = g('formErr');
+  err.style.display='none';
+
+  // Validate all required fields
+  const required = [
+    {id:'fTr',  label:'Triggering Event'},
+    {id:'fCt',  label:'KCDB Category'},
+    {id:'fAg',  label:'Registering Agency'},
+    {id:'fAg2', label:'Estimated Age Range'},
+    {id:'fCo',  label:'County / Region'},
+    {id:'fSt',  label:'Immediate Status'},
+    {id:'fLe',  label:'Legal Aid Status'},
+    {id:'fPl',  label:'Current Placement'},
+    {id:'fNo',  label:'Case Circumstances'},
+    {id:'fOff', label:'Registering Officer Service No.'},
+    {id:'fSup', label:'Supervisor / Countersignature'},
+  ];
+
+  const missing = required.filter(f => !g(f.id).value.trim() || g(f.id).value === '');
+  if(missing.length){
+    err.style.display='block';
+    err.innerHTML='<i class="fa-solid fa-circle-exclamation" style="margin-right:6px"></i><strong>The following required fields are incomplete:</strong> '+missing.map(f=>f.label).join(', ')+'.';
+    g(missing[0].id).focus();
+    return;
+  }
+  if(g('fNo').value.trim().length < 20){
+    err.style.display='block'; err.textContent='Case Circumstances must be at least 20 characters.'; return;
+  }
+  if(g('fPl').value.trim().length < 3){
+    err.style.display='block'; err.textContent='Current Placement must be at least 3 characters.'; return;
+  }
+
+  const v = id => g(id).value.trim();
+  const ucid = 'KCDB-' + crypto.randomUUID();
+  const child = {
+    ucid, category: v('fCt'), trigger: v('fTr'),
+    agency: v('fAg'), age: v('fAg2'), county: v('fCo'),
+    status: v('fSt'), notes: v('fNo'), legalAid: v('fLe'),
+    placement: v('fPl'), registered: new Date().toISOString(),
+    officerId: v('fOff'), supervisor: v('fSup'),
+    audit: [{
+      time: fmt(new Date().toISOString()),
+      user: S.user, role: R[S.role].lbl,
+      action: `UCID generated by ${R[S.role].lbl} (${S.user}) — ${v('fTr')}`,
+      type: 'Registration', sev: 'warn',
+      session: SESSION_ID, ip: simIP(S.role), officerId: v('fOff')
+    }]
+  };
+  S.children.unshift(child);
+  logA(`New UCID generated: ${ucid.substring(0,28)}…`, 'Registration', 'warn');
+  saveD();
+
+  window._lu = ucid;
+  g('ucidV').textContent = ucid;
+  g('ucidR').classList.add('on');
+  g('formErr').style.display='none';
+  toast('s','Child Registered Successfully','UCID: '+ucid.substring(0,26)+'…');
+  renderAll();
+  setTimeout(()=>{
+    g('ucidR').classList.remove('on');
+    g('regF').reset();
+    goTab('cases');
+  }, 5000);
+}
+function copyUCID(){ if(window._lu){ navigator.clipboard.writeText(window._lu).catch(()=>{}); toast('s','UCID Copied','Ready to paste into case file'); } }
+
+/* ══════════ MODAL ══════════ */
+function openModal(ucid){
+  const c=S.children.find(x=>x.ucid===ucid); if(!c)return;
+  S.activeModal=ucid;
+  document.getElementById('mUC').textContent=ucid;
+  document.getElementById('mCa').innerHTML=`<span class="bdg b${c.category}">Category ${c.category}</span>`;
+  document.getElementById('mTr').textContent=c.trigger;
+  document.getElementById('mCo').textContent=c.county||'—';
+  document.getElementById('mLe').textContent=c.legalAid||'—';
+  document.getElementById('mAge').textContent=c.age||'—';
+  document.getElementById('mAg').textContent=c.agency||'—';
+  document.getElementById('mSt').value=c.status;
+  document.getElementById('mPl').value=c.placement;
+  document.getElementById('mNo').value=c.notes;
+  document.getElementById('mTl').innerHTML=c.audit.map(a=>`
+    <div class="tli">
+      <div class="tld"></div>
+      <div>
+        <div class="tlt">${a.time} · <span style="color:var(--text2);font-weight:600">${a.user||a.role}</span>${a.session?' · <span style="color:var(--text4)">'+a.session+'</span>':''}</div>
+        <div class="tla">${a.action}</div>
+      </div>
+    </div>`).join('')||'<p style="font-size:11px;color:var(--text3)">No audit trail yet.</p>';
+  document.getElementById('modal').classList.add('on');
+  logA(`Viewed record ${ucid.substring(0,28)}…`, 'View', 'info');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('on'); S.activeModal=null; }
+function updateChild(){
+  const c=S.children.find(x=>x.ucid===S.activeModal); if(!c)return;
+  const prevStatus=c.status;
+  c.status=document.getElementById('mSt').value;
+  c.placement=document.getElementById('mPl').value;
+  c.notes=document.getElementById('mNo').value;
+  c.audit.unshift({
+    time:fmt(new Date().toISOString()), user:S.user, role:R[S.role].lbl,
+    action:`Record updated by ${R[S.role].lbl} (${S.user}) — status changed from "${prevStatus}" to "${c.status}"`,
+    type:'Edit', sev:'warn', session:SESSION_ID, ip:simIP(S.role)
+  });
+  logA(`Updated ${S.activeModal.substring(0,28)}… — status: ${c.status}`, 'Edit', 'warn');
+  saveD(); renderAll(); closeModal();
+  toast('s','Record Updated','Status: '+c.status);
+}
+function dischargeChild(){
+  if(!confirm('⚠️ This will permanently anonymise all personal data (Data Minimisation — S.25 DPA 2019).\n\nThis action is irreversible. A full audit entry will be created.\n\nContinue?')) return;
+  const c=S.children.find(x=>x.ucid===S.activeModal); if(!c)return;
+  c.status='Discharged & Anonymised';
+  c.notes='[DATA MINIMISED — aggregate statistics only. No identifying information retained. Compliant with S.25 DPA 2019 and KCDB Data Minimisation Protocol.]';
+  c.placement='[ANONYMISED]';
+  c.age='[ANONYMISED]'; c.county='[ANONYMISED]';
+  c.audit.unshift({
+    time:fmt(new Date().toISOString()), user:S.user, role:R[S.role].lbl,
+    action:`DATA MINIMISATION applied by ${R[S.role].lbl} (${S.user}) — all identifying data permanently anonymised. Authorising officer: ${S.user}`,
+    type:'Data Minimisation', sev:'crit', session:SESSION_ID, ip:simIP(S.role)
+  });
+  logA(`Discharged & anonymised ${S.activeModal.substring(0,28)}…`, 'Data Minimisation', 'crit');
+  saveD(); renderAll(); closeModal();
+  toast('s','Discharged & Anonymised','All identifying data permanently erased');
+}
+
+/* ══════════ ALERTS ══════════ */
+function addAlert(lv,ti,de,so){
+  S.alerts.unshift({id:Date.now(),lv,ti,de,so,time:fmt(new Date().toISOString())});
+  logA(`Alert generated: ${ti} (${lv}) — ${so}`, 'Alert', lv==='critical'?'crit':'warn');
+  renderAlerts(); updateBadges(); renderDashAlerts();
+}
+function dimAlert(id){
+  if(!R[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may dismiss alerts'); return; }
+  const a=S.alerts.find(x=>x.id===id);
+  if(a) logA(`Alert DISMISSED: "${a.ti}" — dismissed by ${R[S.role].lbl} (${S.user})`, 'Alert', 'warn');
+  S.alerts=S.alerts.filter(a=>a.id!==id);
+  renderAlerts(); updateBadges(); renderDashAlerts();
+}
+function resolveAlert(id){
+  if(!R[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may resolve alerts'); return; }
+  const a=S.alerts.find(x=>x.id===id);
+  if(a) logA(`Alert RESOLVED: "${a.ti}" — resolved by ${R[S.role].lbl} (${S.user}). Logged in audit trail.`, 'Alert', 'warn');
+  dimAlert(id);
+  toast('s','Alert Resolved','Resolution recorded in audit log');
+}
+function dismissAll(){
+  if(!R[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may dismiss alerts'); return; }
+  logA(`ALL ALERTS dismissed by ${R[S.role].lbl} (${S.user}) — ${S.alerts.length} alert(s) cleared`, 'Alert', 'crit');
+  S.alerts=[]; renderAlerts(); updateBadges(); renderDashAlerts();
+  toast('s','All Alerts Cleared','Dismissal recorded in audit log');
+}
+
+/* ══════════ AUDIT LOG ══════════ */
+function logA(msg, type='Action', sev='info'){
+  S.audit.unshift({
+    time: fmt(new Date().toISOString()),
+    user: S.user,
+    role: R[S.role].lbl,
+    msg, type, sev,
+    session: SESSION_ID,
+    ip: simIP(S.role),
+    device: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
+  });
+  if(S.audit.length>200) S.audit.pop();
+  saveD();
+}
+
+const RC={'POLICE':'rPO','DCS':'rDC','JUDICIARY':'rJU','NCCS':'rNC','SYSTEM':'rSY'};
+const TC={'Registration':'typ-reg','View':'typ-view','Edit':'typ-edit','Auth':'typ-auth','Alert':'typ-alert','System':'typ-sys','Data Minimisation':'typ-alert','Action':'typ-view'};
+
+function renderAudit(search){
+  const roleFil=document.getElementById('auRl')?.value||'';
+  const typFil=document.getElementById('auTyp')?.value||'';
+  const sevFil=document.getElementById('auSev')?.value||'';
+  let en=S.audit;
+  if(roleFil) en=en.filter(e=>e.role===roleFil);
+  if(typFil) en=en.filter(e=>e.type===typFil);
+  if(sevFil) en=en.filter(e=>e.sev===sevFil);
+  if(search) en=en.filter(e=>(e.msg||'').toLowerCase().includes(search)||(e.user||'').toLowerCase().includes(search)||(e.type||'').toLowerCase().includes(search));
+  const bd=document.getElementById('auBd');
+  const empty=document.getElementById('auEmpty');
+  if(!en.length){ bd.innerHTML=''; if(empty)empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  bd.innerHTML=en.map(e=>`
+    <tr>
+      <td><span class="at-time">${e.time}</span></td>
+      <td><span class="at-sev sev-${e.sev||'info'}"></span></td>
+      <td><span class="at-type ${TC[e.type]||'typ-view'}">${e.type||'Action'}</span></td>
+      <td><span class="auR ${RC[e.role]||'rSY'}">${e.role}</span></td>
+      <td style="font-size:11px;color:var(--text);font-weight:500">${e.user}</td>
+      <td><span class="at-session">${(e.session||SESSION_ID).substring(0,12)}</span></td>
+      <td><span class="at-ip">${e.ip||'—'}</span></td>
+      <td style="font-size:11.5px;color:var(--text2);max-width:260px">${e.msg}</td>
+    </tr>`).join('');
+}
+function filterAudit(v){ renderAudit(v.toLowerCase()); }
+
+function updateAuditStats(){
+  document.getElementById('auTot').textContent=S.audit.length;
+  document.getElementById('auCrit').textContent=S.audit.filter(e=>e.sev==='crit').length;
+  document.getElementById('auWarn').textContent=S.audit.filter(e=>e.sev==='warn').length;
+  document.getElementById('sessId').textContent=SESSION_ID;
+}
+
+function exportAudit(){
+  const rows=[['Timestamp','Type','Severity','Role','Officer','Session ID','IP Address','Action'],...S.audit.map(e=>[e.time,e.type||'',e.sev||'',e.role||'',e.user||'',e.session||'',e.ip||'',e.msg||''])];
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='KCDB_AuditLog_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  logA('Audit log exported to CSV by '+R[S.role].lbl+' ('+S.user+')', 'System', 'warn');
+  toast('s','Audit Log Exported','CSV downloaded');
+}
+
+/* ══════════ RENDER HELPERS ══════════ */
+function renderAll(){ updateStats(); updateBadges(); renderRecent(); renderCases(); renderAlerts(); renderDashAlerts(); renderAudit(); updateAnStats(); updateCharts(); updateAuditStats(); }
+
+function updateStats(){
+  const act=S.children.filter(c=>!c.status.includes('Discharged'));
+  const tod=S.children.filter(c=>new Date(c.registered).toDateString()===new Date().toDateString());
+  const dis=S.children.filter(c=>c.status.includes('Discharged'));
+  const g=id=>document.getElementById(id);
+  if(g('sAc'))g('sAc').textContent=act.length;
+  if(g('sTd'))g('sTd').textContent=tod.length;
+  if(g('sAl'))g('sAl').textContent=S.alerts.length;
+  if(g('sDi'))g('sDi').textContent=dis.length;
+  if(g('sAlT'))g('sAlT').textContent=S.alerts.length?`${S.alerts.length} require review`:'No pending alerts';
+}
+
+function updateBadges(){
+  const n=S.alerts.length;
+  const sa=document.getElementById('sA'); if(sa) sa.textContent=n;
+  const sn=document.getElementById('sN'); if(sn) sn.textContent=S.children.filter(c=>!c.status.includes('Discharged')).length;
+  const hb=document.getElementById('hBdg'); if(hb){ hb.textContent=n; hb.classList.toggle('on',n>0); }
+  const bd=document.getElementById('bnD'); if(bd) bd.classList.toggle('on',n>0);
+}
+
+function renderRecent(){
+  const el=document.getElementById('recL'); if(!el)return;
+  const items=S.children.slice(0,5);
+  if(!items.length){ el.innerHTML='<div class="empty" style="padding:16px 0"><i class="fa-solid fa-folder-open" style="font-size:26px;margin-bottom:9px"></i><p>No cases registered yet</p></div>'; return; }
+  el.innerHTML=items.map(c=>`
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s" onclick="openModal('${c.ucid}')" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+      <span class="bdg b${c.category}">Cat. ${c.category}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--teal);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.ucid.substring(0,24)}…</span>
+      <span class="bdg ${scls(c.status)}">${c.status}</span>
+    </div>`).join('');
+}
+
+function renderDashAlerts(){
+  const el=document.getElementById('dAl'); if(!el)return;
+  if(!S.alerts.length){ el.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:12px 0;text-align:center">No active alerts — system nominal</div>'; return; }
+  el.innerHTML=S.alerts.slice(0,3).map(a=>`
+    <div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:${a.lv==='critical'?'var(--rose)':a.lv==='high'?'var(--gold)':'var(--sky)'}"></div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${a.ti}</div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:2px">${a.so}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderCases(){
+  const search=(document.getElementById('cSr')?.value||'').toLowerCase();
+  const sf=document.getElementById('stFil')?.value||'';
+  let fl=S.children;
+  if(S.catF!=='all') fl=fl.filter(c=>c.category===S.catF);
+  if(sf) fl=fl.filter(c=>c.status===sf);
+  if(search) fl=fl.filter(c=>
+    c.ucid.toLowerCase().includes(search)||
+    (c.notes||'').toLowerCase().includes(search)||
+    (c.county||'').toLowerCase().includes(search)||
+    (c.trigger||'').toLowerCase().includes(search));
+  document.getElementById('cEm').style.display=fl.length?'none':'block';
+  const tb=document.getElementById('cBd');
+  if(tb) tb.innerHTML=fl.map(c=>`
+    <tr onclick="openModal('${c.ucid}')">
+      <td><span class="ut">${c.ucid.substring(0,26)}…</span></td>
+      <td><span class="bdg b${c.category}">Cat. ${c.category}</span></td>
+      <td style="color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.trigger}</td>
+      <td style="color:var(--text2)">${c.county||'—'}</td>
+      <td><span class="bdg ${scls(c.status)}">${c.status}</span></td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3)">${c.agency}</td>
+      <td style="color:var(--text3)">${fmtS(c.registered)}</td>
+      <td>
+        <button class="bsec" style="padding:4px 12px;font-size:10.5px;width:auto" onclick="event.stopPropagation();openModal('${c.ucid}')">
+          View
+        </button>
+      </td>
+    </tr>`).join('');
+  const mc=document.getElementById('cCs');
+  if(mc) mc.innerHTML=fl.map(c=>`
+    <div class="cc_" onclick="openModal('${c.ucid}')">
+      <div class="ccr">
+        <span class="bdg b${c.category}">Cat. ${c.category}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--teal);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.ucid.substring(0,30)}…</span>
+      </div>
+      <div style="font-size:13px;color:var(--text);font-weight:500;margin-top:5px">${c.trigger}</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px">
+        <span class="bdg ${scls(c.status)}">${c.status}</span>
+        <span style="font-size:10.5px;color:var(--text3)">${c.county||'—'}</span>
+        <span style="font-size:10.5px;color:var(--text3)">· ${fmtS(c.registered)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderAlerts(){
+  const el=document.getElementById('alL'); if(!el)return;
+  if(!S.alerts.length){ el.innerHTML='<div class="empty"><i class="fa-solid fa-bell-slash"></i><p>No active alerts. System nominal.</p></div>'; return; }
+  const canDismiss=R[S.role].canDismiss;
+  el.innerHTML=S.alerts.map(a=>`
+    <div class="ali ${a.lv}">
+      <div class="ali-ic ${a.lv}">
+        <i class="fa-solid ${a.lv==='critical'?'fa-circle-exclamation':a.lv==='high'?'fa-triangle-exclamation':'fa-circle-info'}"></i>
+      </div>
+      <div class="ali-b">
+        <div class="ali-t">${a.ti}</div>
+        <div class="ali-d">${a.de}</div>
+        <div class="ali-m"><i class="fa-regular fa-clock" style="margin-right:3px"></i>${a.time} · ${a.so}</div>
+        <div class="ali-a">
+          ${canDismiss
+            ? `<button class="abtn ar" onclick="resolveAlert(${a.id})"><i class="fa-solid fa-check" style="margin-right:4px"></i>Resolve</button>
+               <button class="abtn ad" onclick="dimAlert(${a.id})">Dismiss</button>`
+            : `<div class="auth-lock"><i class="fa-solid fa-lock"></i> Dismissal restricted — DCS &amp; Judiciary only</div>`
+          }
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════ ANALYTICS ══════════ */
+function updateAnStats(){
+  const tot=S.children.length,cC=S.children.filter(c=>c.category==='C').length,ct=S.children.filter(c=>c.status==='In Court').length;
+  const g=id=>document.getElementById(id);
+  if(g('aTt'))g('aTt').textContent=tot;
+  if(g('aCc'))g('aCc').textContent=cC;
+  if(g('aCt'))g('aCt').textContent=ct;
+  const pct=(n,d)=>d?Math.round(n/d*100)+'%':'0%';
+  if(g('pC'))g('pC').style.width=pct(cC,tot);
+  if(g('pCt'))g('pCt').style.width=pct(ct,tot);
+}
+
+let cC_,cS_;
+function getChartOpts(){
+  const isDark = S.theme==='dark';
+  return { textColor: isDark?'#4a6278':'#6b7280', gridColor: isDark?'rgba(255,255,255,.04)':'rgba(0,0,0,.06)', borderColor: isDark?'#0c1628':'#ffffff' };
+}
+function initCharts(){
+  if(S.cI){ updateCharts(); return; } S.cI=true;
+  if(typeof Chart==='undefined'){ console.warn('Chart.js not available'); return; }
+  const o=getChartOpts();
+  const cats=['A','B','C','D'],cc=cats.map(c=>S.children.filter(x=>x.category===c).length);
+  try{cC_=new Chart(document.getElementById('cCat'),{type:'doughnut',data:{labels:['Cat. A — CICL','Cat. B — CiCL','Cat. C — Trafficked','Cat. D — Unaccompanied'],datasets:[{data:cc,backgroundColor:['rgba(90,164,212,.8)','rgba(71,181,212,.8)','rgba(224,85,112,.8)','rgba(212,168,71,.8)'],borderColor:o.borderColor,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{family:"'Inter'",size:10},boxWidth:10,padding:10}}},cutout:'65%'}});}catch(e){}
+  const stats=['Registered','In Care','In Court','Detained','Reintegrated','Discharged & Anonymised'];
+  try{cS_=new Chart(document.getElementById('cStat'),{type:'bar',data:{labels:stats,datasets:[{data:stats.map(s=>S.children.filter(c=>c.status===s).length),backgroundColor:['rgba(71,181,212,.7)','rgba(90,164,212,.7)','rgba(212,168,71,.7)','rgba(224,85,112,.7)','rgba(88,196,154,.7)','rgba(100,116,139,.4)'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{display:false}},y:{ticks:{color:o.textColor,stepSize:1},grid:{color:o.gridColor}}}}});}catch(e){}
+}
+function updateCharts(){
+  if(!S.cI)return;
+  if(cC_){cC_.data.datasets[0].data=['A','B','C','D'].map(c=>S.children.filter(x=>x.category===c).length);cC_.update();}
+  if(cS_){cS_.data.datasets[0].data=['Registered','In Care','In Court','Detained','Reintegrated','Discharged & Anonymised'].map(s=>S.children.filter(c=>c.status===s).length);cS_.update();}
+}
+function initAnalyticsCharts(){
+  if(S.aI)return; S.aI=true;
+  if(typeof Chart==='undefined'){ console.warn('Chart.js not available'); return; }
+  const o=getChartOpts();
+  const days=Array.from({length:14},(_,i)=>{const d=new Date(Date.now()-(13-i)*864e5);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});});
+  try{new Chart(document.getElementById('cTm'),{type:'line',data:{labels:days,datasets:[{label:'Registrations',data:[2,1,3,2,4,1,2,3,2,4,3,5,2,3],borderColor:'#47b5d4',backgroundColor:'rgba(71,181,212,.07)',fill:true,tension:.4,pointBackgroundColor:'#47b5d4',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{color:o.gridColor}},y:{ticks:{color:o.textColor,stepSize:1},grid:{color:o.gridColor}}}}});}catch(e){}
+  const counties=['Nairobi','Mombasa','Kisumu','Kilifi','Nakuru','Other'];
+  try{new Chart(document.getElementById('cCo'),{type:'bar',data:{labels:counties,datasets:[{data:counties.map(c=>S.children.filter(x=>x.county===c).length),backgroundColor:'rgba(90,164,212,.65)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{color:o.gridColor}},y:{ticks:{color:o.textColor,font:{size:10}},grid:{display:false}}}}});}catch(e){}
+  try{new Chart(document.getElementById('cTg'),{type:'polarArea',data:{labels:['Arrest','Rescue','Court Filing','Health Ref.','DCS Complaint','Border'],datasets:[{data:[1,2,1,1,1,1],backgroundColor:['rgba(224,85,112,.6)','rgba(212,168,71,.6)','rgba(71,181,212,.6)','rgba(90,164,212,.6)','rgba(168,85,247,.6)','rgba(88,196,154,.6)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{size:10},boxWidth:9,padding:8}}},scales:{r:{grid:{color:o.gridColor},ticks:{display:false}}}}});}catch(e){}
+  try{new Chart(document.getElementById('cAg'),{type:'doughnut',data:{labels:['Police','DCS','Judiciary','Health','Immigration'],datasets:[{data:[1,3,1,1,1],backgroundColor:['rgba(90,164,212,.8)','rgba(71,181,212,.8)','rgba(212,168,71,.8)','rgba(224,85,112,.8)','rgba(168,85,247,.8)'],borderColor:o.borderColor,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{size:10},boxWidth:9,padding:8}}},cutout:'58%'}});}catch(e){}
+}
+
+/* ══════════ SEARCH ══════════ */
+function gSearch(v){ if(v.length<2)return; goTab('cases'); const cs=document.getElementById('cSr'); if(cs)cs.value=v; renderCases(); }
+function filterCases(){ renderCases(); }
+
+/* ══════════ TOAST ══════════ */
+function toast(type,title,body){
+  const icons={s:'✓',e:'✕',w:'⚠'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span style="font-size:16px;flex-shrink:0">${icons[type]||icons.s}</span><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;line-height:1.3">${title}</div>${body?`<div style="font-size:10.5px;color:var(--text3);margin-top:2px">${body}</div>`:''}</div><span class="tc" onclick="this.parentElement.remove()">×</span>`;
+  document.getElementById('tw').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},4500);
+}
+
+/* ══════════ UTILS ══════════ */
+function uid(){ return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)); }
+function fmt(iso){ const d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function fmtS(iso){ return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function scls(s){ const m={'Registered':'sReg','In Care':'sCare','In Court':'sCourt','Detained':'sDet','Reintegrated':'sRein'}; return m[s]||'sDis'; }
+function doLogout(){ if(confirm('End session?')){ logA('User signed out: '+S.user,'Auth','warn'); sessionStorage.clear(); location.reload(); } }
+
+/* ══════════ PERSISTENCE ══════════ */
+function loadD(){ try{ const c=sessionStorage.getItem('k_c4'),a=sessionStorage.getItem('k_a4'); if(c)S.children=JSON.parse(c); if(a)S.audit=JSON.parse(a); }catch(e){} }
+function saveD(){ try{ sessionStorage.setItem('k_c4',JSON.stringify(S.children)); sessionStorage.setItem('k_a4',JSON.stringify(S.audit)); }catch(e){} }
+
+/* ══════════ SEED DATA ══════════ */
+function seed(){
+  const n=new Date(),ago=d=>new Date(n-d*864e5).toISOString();
+  const mkAudit=(t,user,role,action,type,sev)=>({time:fmt(t),user,role,action,type,sev,session:'SID-'+Math.random().toString(36).substr(2,6).toUpperCase(),ip:simIP(role.toLowerCase())});
+  S.children=[
+    {ucid:'KCDB-'+uid(),category:'C',trigger:'Rescue from Trafficking Situation',status:'In Care',county:'Kisumu',agency:'Dept. of Children Services',placement:"St. Francis Children's Home",age:'13–15 years',legalAid:'Yes',notes:'Rescued from domestic servitude. Medical referral completed. Psychological support arranged.',registered:ago(1),officerId:'DCS-KSM-0042',supervisor:'DCS-KSM-SUP-001',
+    audit:[mkAudit(ago(1),'KPS Officer Ochieng','POLICE','UCID generated on rescue — trafficking situation confirmed','Registration','warn'),mkAudit(ago(.8),'Jane Mwangi','DCS',"Child transferred to St. Francis Children's Home, Kisumu. Intake completed.",'Edit','warn')]},
+    {ucid:'KCDB-'+uid(),category:'B',trigger:"Court Filing (Children's Court)",status:'In Court',county:'Nairobi',agency:"Judiciary — Children's Court",placement:"Nairobi Children's Court",age:'10–12 years',legalAid:'Pending',notes:'Child victim in criminal proceedings. Sexual exploitation case. Witness protection measures in place.',registered:ago(5),officerId:'JUD-NRB-0078',supervisor:'JUD-NRB-SUP-003',
+    audit:[mkAudit(ago(5),'Hon. Achieng','JUDICIARY','Court filing registered — sexual exploitation case','Registration','warn'),mkAudit(ago(4),'ODPP Prosecutor','JUDICIARY','Prosecution file opened. Evidence filed under seal.','Edit','warn')]},
+    {ucid:'KCDB-'+uid(),category:'A',trigger:'Arrest / Apprehension by Police',status:'Detained',county:'Mombasa',agency:'Kenya Police Service',placement:'Shimo La Tewa Remand Home',age:'14–16 years',legalAid:'Yes',notes:'Petty theft. Awaiting diversion assessment. First contact with justice system. No prior record.',registered:ago(9),officerId:'KPS-MSA-2891',supervisor:'KPS-MSA-SUP-007',
+    audit:[mkAudit(ago(9),'Sgt. Omondi','POLICE','UCID generated on arrest — first offence, petty theft','Registration','warn'),mkAudit(ago(8),'Jane Mwangi','DCS','Placed in Shimo La Tewa Remand Home. Diversion referral initiated.','Edit','warn')]},
+    {ucid:'KCDB-'+uid(),category:'D',trigger:'Unaccompanied Child at Border Point',status:'In Care',county:'Eldoret / Uasin Gishu',agency:'Kenya Immigration Service',placement:'UNHCR Transit Centre, Kakuma',age:'8–11 years',legalAid:'Yes',notes:'Found at Busia border crossing without guardian or documentation. Asylum claim under assessment.',registered:ago(3),officerId:'KIS-ELD-0022',supervisor:'KIS-ELD-SUP-001',
+    audit:[mkAudit(ago(3),'Immigration Officer Barasa','DCS','UCID generated — unaccompanied minor at Busia border crossing','Registration','warn')]},
+    {ucid:'KCDB-'+uid(),category:'C',trigger:'Health Facility — Child Abuse Referral',status:'Registered',county:'Kilifi',agency:'Ministry of Health',placement:'Under DCS Assessment',age:'5–9 years',legalAid:'Yes',notes:'Referred from Kilifi County Hospital. FGM suspected. Care and protection order sought by DCS.',registered:ago(.3),officerId:'MOH-KFI-0033',supervisor:'MOH-KFI-SUP-002',
+    audit:[mkAudit(ago(.3),'Dr. Kadenge','DCS','UCID generated — referral from Kilifi County Hospital. FGM investigation initiated.','Registration','warn')]},
+    {ucid:'KCDB-'+uid(),category:'B',trigger:'Complaint Filed with DCS',status:'Reintegrated',county:'Nakuru',agency:'Dept. of Children Services',placement:'Family Home, Nakuru',age:'5–9 years',legalAid:'No',notes:'Neglect complaint resolved. Family mediation completed. Reintegrated with extended family under supervision order.',registered:ago(45),officerId:'DCS-NKR-0019',supervisor:'DCS-NKR-SUP-001',
+    audit:[mkAudit(ago(45),'Jane Mwangi','DCS','UCID generated — neglect complaint filed by school.','Registration','warn'),mkAudit(ago(10),'Jane Mwangi','DCS','Family reintegration completed. Supervision order issued by Children\'s Court.','Edit','warn')]},
+  ];
+  saveD();
+}
+
+/* ══════════ INIT ══════════ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadD(); if(!S.children.length) seed();
+  document.getElementById('dDt').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · KCDB v3.0';
+  document.getElementById('sessId').textContent = SESSION_ID;
+  document.getElementById('rAv').style.background = R['dcs'].col+'22';
+  document.getElementById('rAv').style.color = R['dcs'].col;
+
+  renderAll(); initCharts(); updateAlertPermUI();
+
+  document.getElementById('catCh').addEventListener('click', e=>{
+    const c=e.target.closest('.chip'); if(!c)return;
+    document.querySelectorAll('#catCh .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); S.catF=c.dataset.c; renderCases();
+  });
+
+  // Responsive dashboard grid
+  const mq=window.matchMedia('(max-width:640px)');
+  const applyDG=m=>{ const dg=document.getElementById('dG'); if(dg) dg.style.gridTemplateColumns=m.matches?'1fr':'1fr 1fr'; };
+  applyDG(mq); mq.addEventListener('change',applyDG);
+
+  // Log initial session
+  logA(`Session started — ${R['dcs'].lbl} (Jane Mwangi) | Device: ${/Mobi/i.test(navigator.userAgent)?'Mobile':'Desktop'}`, 'Auth', 'warn');
+
+  // Staggered alerts
+  setTimeout(()=>addAlert('critical','Detention Review Required','Child detained 9 days without judicial review. S.229 Children Act timeline breached. Immediate hearing required.','Nairobi Remand Home'), 2500);
+  setTimeout(()=>addAlert('high','Unaccompanied Child — Border Alert','Unaccompanied minor at Namanga crossing. No prior KCDB record. DCS intervention required within 6 hours.','Kenya Immigration Service'), 5500);
+  setTimeout(()=>addAlert('medium','Legal Aid Pending','Child in proceedings 14 days with no confirmed legal representation (S.96 Children Act).',"Nairobi Children's Court"), 9000);
+});
+</script>
+</body>
+</html>
