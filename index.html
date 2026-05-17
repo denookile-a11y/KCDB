@@ -1,1 +1,3616 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080f1e" id="themeColorMeta">
+<title>KCDB · Kenya Children Data Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ════════════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════════════ */
+:root {
+  --tr: .2s cubic-bezier(.4,0,.2,1);
+  --hh: 60px; --sw: 256px; --bh: 66px;
+  --r: 10px; --rl: 14px; --rxl: 20px;
+}
+[data-theme="dark"] {
+  --bg:#080f1e;--bg2:#0c1628;--bg3:#111d34;--bg4:#16243d;--bg5:#1d2e4a;
+  --surface:#0e1a2e;--surface2:#132033;
+  --border:rgba(255,255,255,.07);--border2:rgba(71,157,212,.28);--border3:rgba(71,157,212,.12);
+  --text:#e8f0f8;--text2:#8daabf;--text3:#4a6278;--text4:#2e4358;
+  --teal:#47b5d4;--teal2:#2e9ab8;--teal3:rgba(71,181,212,.14);--teal4:rgba(71,181,212,.07);
+  --gold:#d4a847;--rose:#e05570;--sky:#5aa4d4;--mint:#58c49a;
+  --shadow:0 4px 32px rgba(0,0,0,.5);--sh2:0 1px 8px rgba(0,0,0,.3);
+  --glow:0 0 0 3px rgba(71,181,212,.18);
+  --logo-bg:linear-gradient(135deg,#2e9ab8,#1a6888);
+  --scrollbar:#1d2e4a;
+}
+[data-theme="light"] {
+  --bg:#f5f7fa;--bg2:#ffffff;--bg3:#eef1f6;--bg4:#e4eaf2;--bg5:#d8e0ec;
+  --surface:#ffffff;--surface2:#f8fafc;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,115,168,.25);--border3:rgba(0,115,168,.10);
+  --text:#111827;--text2:#374151;--text3:#6b7280;--text4:#9ca3af;
+  --teal:#0073a8;--teal2:#005a84;--teal3:rgba(0,115,168,.10);--teal4:rgba(0,115,168,.05);
+  --gold:#b07d1a;--rose:#c73a52;--sky:#2563a8;--mint:#1a7a52;
+  --shadow:0 2px 20px rgba(0,0,0,.08);--sh2:0 1px 4px rgba(0,0,0,.06);
+  --glow:0 0 0 3px rgba(0,115,168,.14);
+  --logo-bg:linear-gradient(135deg,#0073a8,#005a84);
+  --scrollbar:#d8e0ec;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100dvh;overflow-x:hidden;
+  transition:background var(--tr),color var(--tr);
+}
+::selection{background:var(--teal3);color:var(--text)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:99px}
+button,select,input,textarea{font-family:'Inter',sans-serif;color:inherit}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 90% 5%,rgba(71,181,212,.04) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 40% at 5% 95%,rgba(71,181,212,.03) 0%,transparent 70%);
+}
+[data-theme="light"] body::before{opacity:0}
+body>*{position:relative;z-index:1}
+
+/* ════════════════════════════════════════════════
+   LOGIN SCREEN — CHILD-FRIENDLY ANIMATED WORLD
+════════════════════════════════════════════════ */
+#loginScreen{
+  position:fixed;inset:0;z-index:9000;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  animation:fi .4s ease;
+}
+#loginScreen.out{ animation:fo .35s ease forwards; }
+@keyframes fo{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.97)}}
+
+/* Live world canvas */
+#worldCanvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+
+/* Floating decorative emojis */
+.world-float{
+  position:absolute;z-index:1;pointer-events:none;
+  animation:worldFloat linear infinite;
+  font-size:clamp(18px,3vw,34px);
+  user-select:none;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.15));
+}
+@keyframes worldFloat{
+  0%{transform:translateY(0) rotate(var(--rot-s)) scale(1);opacity:0}
+  5%{opacity:.9}
+  95%{opacity:.9}
+  100%{transform:translateY(var(--float-dist)) rotate(var(--rot-e)) scale(var(--sc-e));opacity:0}
+}
+
+/* Sparkle pulses */
+.sparkle{
+  position:absolute;z-index:1;pointer-events:none;
+  width:6px;height:6px;border-radius:50%;
+  animation:sparklePulse 2.5s ease-in-out infinite alternate;
+}
+@keyframes sparklePulse{
+  from{opacity:.2;transform:scale(.6)}
+  to{opacity:1;transform:scale(1.4)}
+}
+
+/* ── Login card wrapper ── */
+.login-wrap{
+  width:100%;max-width:480px;
+  padding:16px;
+  position:relative;z-index:10;
+  animation:lsup .6s cubic-bezier(.34,1.2,.64,1);
+  max-height:100dvh;overflow-y:auto;
+}
+.login-wrap::-webkit-scrollbar{width:0}
+@keyframes lsup{from{opacity:0;transform:translateY(32px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.login-card{
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:2px solid rgba(255,255,255,.8);
+  border-radius:28px;
+  padding:32px 28px;
+  box-shadow:0 24px 80px rgba(0,0,0,.18), 0 8px 32px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Rainbow top stripe */
+.login-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  border-radius:28px 28px 0 0;
+  background:linear-gradient(90deg,#FF6B9D,#FF9F6B,#FFD166,#06D6A0,#118AB2,#9B5DE5);
+}
+
+/* ── Portal header banner ── */
+.login-portal-banner{
+  text-align:center;margin-bottom:20px;padding-bottom:18px;
+  border-bottom:2px dashed rgba(0,0,0,.08);
+  position:relative;
+}
+.login-portal-icon{
+  width:72px;height:72px;border-radius:22px;margin:0 auto 12px;
+  background:linear-gradient(135deg,#118AB2,#06D6A0);
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  box-shadow:0 8px 32px rgba(17,138,178,.35), 0 0 0 6px rgba(17,138,178,.1);
+  animation:iconPulse 3s ease-in-out infinite;
+}
+@keyframes iconPulse{
+  0%,100%{box-shadow:0 8px 32px rgba(17,138,178,.35), 0 0 0 6px rgba(17,138,178,.1)}
+  50%{box-shadow:0 8px 32px rgba(17,138,178,.5), 0 0 0 12px rgba(17,138,178,.05)}
+}
+.login-portal-title{
+  font-family:'Baloo 2',cursive;
+  font-size:30px;font-weight:800;
+  background:linear-gradient(135deg,#118AB2,#06D6A0);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1;margin-bottom:4px;
+}
+.login-portal-sub{
+  font-family:'Nunito',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:#118AB2;opacity:.7;margin-bottom:6px;
+}
+.login-portal-tagline{
+  font-family:'Nunito',sans-serif;
+  font-size:13px;font-weight:600;color:#555;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.login-portal-tagline span{font-size:16px}
+
+/* ── Role selection label ── */
+.login-label{
+  font-family:'Nunito',sans-serif;
+  font-size:10px;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;color:#888;margin-bottom:10px;display:block;
+  display:flex;align-items:center;gap:7px;
+}
+.login-label::before,.login-label::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.08)}
+
+/* ── Role cards ── */
+.role-cards{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:20px;
+  max-height:300px;overflow-y:auto;
+  padding-right:2px;
+}
+.role-cards::-webkit-scrollbar{width:4px}
+.role-cards::-webkit-scrollbar-thumb{background:#ddd;border-radius:99px}
+
+.role-card{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  border-radius:16px;
+  border:2px solid rgba(0,0,0,.07);
+  background:#f8f9fa;
+  cursor:pointer;
+  transition:all .22s cubic-bezier(.34,1.2,.64,1);
+  position:relative;overflow:hidden;
+}
+.role-card::after{
+  content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;
+  background:linear-gradient(135deg,rgba(255,255,255,.4),transparent);
+}
+.role-card:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.role-card:hover::after{opacity:1}
+.role-card:active{transform:scale(.98)}
+.role-card.selected{
+  border-color:transparent;
+  box-shadow:0 6px 24px rgba(0,0,0,.15);
+  transform:translateY(-2px) scale(1.02);
+}
+.role-card-av{
+  width:42px;height:42px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;flex-shrink:0;
+  letter-spacing:.5px;font-family:'Baloo 2',cursive;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+.role-card-info{flex:1;min-width:0;}
+.role-card-name{font-family:'Nunito',sans-serif;font-size:13.5px;font-weight:800;color:#1a1a2e;line-height:1.2}
+.role-card-role{font-family:'Nunito',sans-serif;font-size:10px;font-weight:600;color:#888;margin-top:1px}
+.role-card-badge{
+  font-family:'Baloo 2',cursive;
+  font-size:9px;font-weight:700;padding:4px 10px;border-radius:99px;
+  letter-spacing:.8px;text-transform:uppercase;flex-shrink:0;
+}
+.role-card-perms{
+  font-size:9.5px;color:#888;margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;
+}
+.perm-tag{
+  padding:2px 7px;border-radius:99px;
+  background:rgba(0,0,0,.06);font-size:8.5px;font-weight:700;
+  color:#777;
+}
+.perm-tag.green{background:rgba(6,214,160,.15);color:#059669}
+.perm-tag.red{background:rgba(255,107,107,.15);color:#e53e3e}
+
+/* ── Sign In button — BIG & FRIENDLY ── */
+.login-btn{
+  width:100%;padding:18px 20px;
+  background:linear-gradient(135deg,#118AB2,#06D6A0);
+  color:#fff;
+  font-family:'Baloo 2',cursive;
+  font-size:18px;font-weight:700;
+  border:none;border-radius:18px;cursor:pointer;
+  transition:all .25s cubic-bezier(.34,1.2,.64,1);
+  box-shadow:0 8px 32px rgba(17,138,178,.35), 0 4px 12px rgba(6,214,160,.2);
+  display:flex;align-items:center;justify-content:center;gap:11px;
+  letter-spacing:.5px;
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  min-height:60px;
+}
+.login-btn::before{
+  content:'';position:absolute;inset:-2px;
+  background:linear-gradient(135deg,#06D6A0,#118AB2,#9B5DE5);
+  z-index:-1;border-radius:20px;opacity:0;transition:opacity .3s;
+}
+.login-btn:hover:not(:disabled){
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:0 14px 40px rgba(17,138,178,.45);
+}
+.login-btn:hover:not(:disabled)::before{opacity:1}
+.login-btn:active:not(:disabled){transform:scale(.97)}
+.login-btn:disabled{
+  background:linear-gradient(135deg,#ccc,#ddd);
+  box-shadow:none;cursor:not-allowed;
+  color:rgba(255,255,255,.7);
+}
+.login-btn-icon{font-size:22px;transition:transform .2s}
+.login-btn:hover:not(:disabled) .login-btn-icon{transform:scale(1.2) rotate(-5deg)}
+
+/* ── Footer ── */
+.login-footer{
+  text-align:center;margin-top:14px;
+  font-family:'Nunito',sans-serif;
+  font-size:10px;color:#aaa;line-height:1.7;
+}
+.login-secure{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-bottom:4px;color:#888;font-size:10.5px;font-weight:700;
+}
+
+/* Theme toggle on login */
+.login-theme{
+  position:absolute;top:16px;right:16px;z-index:20;
+  width:40px;height:40px;border-radius:12px;
+  background:rgba(255,255,255,.8);
+  border:2px solid rgba(0,0,0,.08);
+  display:flex;align-items:center;justify-content:center;
+  color:#555;cursor:pointer;font-size:16px;
+  transition:all .2s;
+  backdrop-filter:blur(8px);
+  -webkit-tap-highlight-color:transparent;
+}
+.login-theme:hover{border-color:#118AB2;color:#118AB2;transform:rotate(15deg)}
+
+/* ── Child figure decorations ── */
+.login-kids-row{
+  display:flex;justify-content:center;gap:4px;margin-bottom:14px;
+  font-size:22px;
+  animation:kidsWave 3s ease-in-out infinite;
+}
+@keyframes kidsWave{
+  0%,100%{transform:translateY(0)}
+  25%{transform:translateY(-4px)}
+  75%{transform:translateY(2px)}
+}
+
+/* ── Switch Role Modal inside portal ── */
+#switchRoleModal{
+  display:none;position:fixed;inset:0;z-index:8000;
+  background:rgba(8,15,30,.75);backdrop-filter:blur(16px);
+  align-items:center;justify-content:center;padding:20px;
+}
+#switchRoleModal.on{display:flex;animation:mofi .22s ease}
+.srm-card{
+  background:#fff;border-radius:28px;padding:28px 24px;
+  max-width:440px;width:100%;
+  box-shadow:0 32px 80px rgba(0,0,0,.25);
+  animation:moup .28s cubic-bezier(.34,1.35,.64,1);
+  position:relative;overflow:hidden;
+}
+.srm-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,#FF6B9D,#FFD166,#06D6A0,#118AB2,#9B5DE5);
+}
+.srm-title{
+  font-family:'Baloo 2',cursive;font-size:22px;font-weight:800;
+  color:#1a1a2e;margin-bottom:4px;text-align:center;
+}
+.srm-sub{
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;
+  color:#888;text-align:center;margin-bottom:18px;
+}
+.srm-close{
+  position:absolute;top:14px;right:14px;
+  width:32px;height:32px;border-radius:10px;
+  background:rgba(0,0,0,.06);border:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;color:#888;
+  transition:all .2s;
+}
+.srm-close:hover{background:rgba(224,85,112,.12);color:#e05570}
+.srm-btn{
+  width:100%;padding:15px;
+  background:linear-gradient(135deg,#118AB2,#06D6A0);
+  color:#fff;font-family:'Baloo 2',cursive;
+  font-size:16px;font-weight:700;border:none;border-radius:14px;
+  cursor:pointer;transition:all .22s;
+  margin-top:14px;
+  box-shadow:0 6px 20px rgba(17,138,178,.3);
+  min-height:54px;touch-action:manipulation;
+}
+.srm-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(17,138,178,.4)}
+.srm-btn:disabled{background:linear-gradient(135deg,#ccc,#ddd);box-shadow:none;cursor:not-allowed}
+
+/* ── Profile Dropdown ── */
+.profile-dropdown{
+  position:absolute;top:calc(100% + 10px);right:0;
+  width:280px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 16px 48px rgba(0,0,0,.3);
+  z-index:500;overflow:hidden;
+  animation:pdDrop .2s cubic-bezier(.34,1.2,.64,1);
+  display:none;
+}
+.profile-dropdown.on{display:block}
+@keyframes pdDrop{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.pd-header{
+  padding:16px;
+  background:linear-gradient(135deg,rgba(17,138,178,.1),rgba(6,214,160,.06));
+  border-bottom:1px solid var(--border);
+}
+.pd-av{
+  width:48px;height:48px;border-radius:15px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;
+  margin-bottom:8px;
+}
+.pd-name{font-family:'Baloo 2',cursive;font-size:15px;font-weight:800;color:var(--text)}
+.pd-role{font-size:10px;font-weight:600;color:var(--text3);margin-top:2px}
+.pd-agency{font-size:10px;color:var(--text3);margin-top:1px;line-height:1.4}
+.pd-body{padding:8px}
+.pd-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;
+  font-size:13px;font-weight:600;color:var(--text2);
+  cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;
+  font-family:'Nunito',sans-serif;
+}
+.pd-item:hover{background:var(--bg3);color:var(--text)}
+.pd-item i{width:18px;text-align:center;font-size:13px;color:var(--text3)}
+.pd-item:hover i{color:var(--teal)}
+.pd-sep{height:1px;background:var(--border);margin:6px 8px}
+.pd-item.danger{color:var(--rose)}
+.pd-item.danger i{color:var(--rose)}
+.pd-item.danger:hover{background:rgba(224,85,112,.08);color:var(--rose)}
+.pd-item.admin-entry{
+  background:linear-gradient(135deg,rgba(224,85,112,.08),rgba(224,85,112,.04));
+  border:1px solid rgba(224,85,112,.2);color:#e05570;border-radius:10px;margin-bottom:4px;
+}
+.pd-item.admin-entry i{color:#e05570}
+.pd-item.admin-entry:hover{background:rgba(224,85,112,.15)}
+
+/* User chip — clickable */
+.user-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:99px;padding:4px 12px 4px 4px;
+  cursor:pointer;transition:all .18s;position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
+.user-chip:hover{border-color:var(--border2);background:var(--teal4)}
+.user-chip-caret{font-size:9px;color:var(--text3);margin-left:2px;transition:transform .2s}
+.user-chip.open .user-chip-caret{transform:rotate(180deg)}
+
+/* ── Subtle portal live background ── */
+#portalBgCanvas{
+  position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0;transition:opacity 1s ease;
+}
+#content{display:flex;flex:1;overflow:hidden}
+
+/* ════════ HEADER ════════ */
+#hdr{
+  height:var(--hh);background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  position:sticky;top:0;z-index:400;flex-shrink:0;
+  box-shadow:var(--sh2);transition:background var(--tr),box-shadow var(--tr);
+}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-ic{
+  width:36px;height:36px;border-radius:10px;background:var(--logo-bg);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:0 2px 12px rgba(71,181,212,.3);flex-shrink:0;
+}
+.logo-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.2px;line-height:1}
+.logo-sub{font-size:8.5px;font-weight:500;color:var(--teal);letter-spacing:1.6px;text-transform:uppercase;margin-top:2px}
+.hdr-s{
+  display:none;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:99px;
+  padding:0 14px;max-width:360px;flex:1;
+  transition:border-color var(--tr),box-shadow var(--tr);
+}
+.hdr-s:focus-within{border-color:var(--border2);box-shadow:var(--glow)}
+.hdr-s i{color:var(--text3);font-size:12px;flex-shrink:0}
+.hdr-s input{background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;padding:9px 0}
+.hdr-s input::placeholder{color:var(--text3)}
+.hdr-r{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+
+/* User chip (replaces role switcher) */
+.user-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:99px;padding:4px 14px 4px 4px;
+}
+.user-chip-av{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:800;flex-shrink:0;
+}
+.user-chip-info{display:flex;flex-direction:column;}
+.user-chip-name{font-size:11px;font-weight:600;color:var(--text);line-height:1.2}
+.user-chip-role{font-size:9px;color:var(--text3);letter-spacing:.5px}
+
+.ib{
+  width:36px;height:36px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);cursor:pointer;font-size:14px;
+  transition:all var(--tr);position:relative;flex-shrink:0;
+}
+.ib:hover{border-color:var(--border2);color:var(--teal);background:var(--teal4)}
+.ibdg{
+  position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;
+  background:var(--rose);border-radius:99px;border:2px solid var(--bg2);
+  font-size:8px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;color:white;
+}
+.ibdg.on{display:flex}
+.bg{
+  display:flex;align-items:center;gap:7px;background:var(--teal);color:#fff;
+  font-size:12px;font-weight:600;padding:8px 16px;border-radius:99px;border:none;
+  cursor:pointer;white-space:nowrap;letter-spacing:.2px;transition:all var(--tr);
+  box-shadow:0 2px 12px rgba(71,181,212,.25);
+}
+.bg:hover{background:var(--teal2);transform:translateY(-1px);box-shadow:0 4px 18px rgba(71,181,212,.35)}
+
+/* ════════ SIDEBAR ════════ */
+#sidebar{
+  width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:16px 10px;overflow-y:auto;
+  transition:background var(--tr);
+}
+.nlbl{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);
+  padding:0 10px;margin:18px 0 6px;
+}
+.nlbl:first-child{margin-top:2px}
+.ni{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;
+  font-size:12.5px;font-weight:500;color:var(--text2);cursor:pointer;
+  transition:all var(--tr);border:1px solid transparent;white-space:nowrap;position:relative;
+}
+.ni:hover{background:var(--bg3);color:var(--text)}
+.ni.on{background:var(--teal3);color:var(--teal);border-color:var(--border3);font-weight:600}
+.ni.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--teal);border-radius:0 3px 3px 0}
+.ni.hidden{display:none}
+.nic{width:17px;text-align:center;font-size:13px;flex-shrink:0}
+.nbdg{margin-left:auto;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:700;min-width:18px;text-align:center}
+.nb-r{background:var(--rose);color:#fff}
+.nb-a{background:var(--teal3);color:var(--teal)}
+
+/* Sidebar footer */
+.sf{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;font-size:10px;color:var(--text3);line-height:1.6}
+.od{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint);margin-right:2px;flex-shrink:0}
+
+/* ════════ MAIN ════════ */
+#main{flex:1;overflow-y:auto;padding:22px 20px}
+.pnl{display:none}
+.pnl.on{display:block;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ════════ PAGE HEADER ════════ */
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.ph-t{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1.2;color:var(--text)}
+.ph-s{font-size:12px;color:var(--text3);margin-top:3px}
+
+/* ════════ STAT CARDS ════════ */
+.sg{display:grid;gap:14px;margin-bottom:18px}
+.sg4{grid-template-columns:repeat(4,1fr)}
+.sg3{grid-template-columns:repeat(3,1fr)}
+.sc{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);
+  padding:16px;position:relative;overflow:hidden;
+  transition:all var(--tr);cursor:default;
+}
+.sc:hover{border-color:var(--border2);transform:translateY(-1px)}
+.sc-l{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.sc-v{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;line-height:1;color:var(--text)}
+.sc-m{margin-top:8px;font-size:10.5px}
+.sc-ic{position:absolute;right:14px;top:14px;font-size:20px;opacity:.12}
+.tr_{font-weight:600;font-size:10.5px}
+.tu{color:var(--mint)}.tw_{color:var(--gold)}.tr{color:var(--rose)}
+.tl{border-top:3px solid var(--teal)}
+.gd{border-top:3px solid var(--mint)}
+.rs{border-top:3px solid var(--rose)}
+.sk{border-top:3px solid var(--sky)}
+.go{border-top:3px solid var(--gold)}
+
+/* ════════ CARD ════════ */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px;transition:background var(--tr),border-color var(--tr)}
+
+/* ════════ CHART GRID ════════ */
+.cr{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px}
+.cc-t{font-family:'Playfair Display',serif;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.cc-s{font-size:10.5px;color:var(--text3);margin-bottom:14px}
+
+/* ════════ TABLE ════════ */
+.tw_{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.tbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.sb{
+  display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:7px 12px;flex:1;min-width:160px;max-width:300px;
+  transition:border-color var(--tr),box-shadow var(--tr);
+}
+.sb:focus-within{border-color:var(--border2);box-shadow:var(--glow)}
+.sb i{color:var(--text3);font-size:11px;flex-shrink:0}
+.sb input{background:none;border:none;outline:none;color:var(--text);font-size:12.5px;width:100%}
+.sb input::placeholder{color:var(--text3)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3)}
+th{padding:11px 16px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:13px 16px;font-size:12.5px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr{transition:background var(--tr);cursor:pointer}
+tbody tr:hover{background:var(--bg3)}
+tbody tr:last-child td{border-bottom:none}
+.ut{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal)}
+
+/* Mobile cards */
+.ccs{display:none;flex-direction:column}
+.cc_{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--tr)}
+.cc_:hover{background:var(--bg3)}
+.cc_:last-child{border-bottom:none}
+.ccr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ════════ BADGES ════════ */
+.bdg{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;white-space:nowrap}
+.bA{background:rgba(90,164,212,.1);color:var(--sky);border:1px solid rgba(90,164,212,.2)}
+.bB{background:rgba(71,181,212,.09);color:var(--teal);border:1px solid rgba(71,181,212,.2)}
+.bC{background:rgba(224,85,112,.1);color:var(--rose);border:1px solid rgba(224,85,112,.2)}
+.bD{background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.2)}
+.sReg{background:rgba(71,181,212,.1);color:var(--teal);border:1px solid rgba(71,181,212,.2)}
+.sCare{background:rgba(90,164,212,.1);color:var(--sky);border:1px solid rgba(90,164,212,.2)}
+.sCourt{background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.2)}
+.sDet{background:rgba(224,85,112,.1);color:var(--rose);border:1px solid rgba(224,85,112,.2)}
+.sRein{background:rgba(88,196,154,.1);color:var(--mint);border:1px solid rgba(88,196,154,.2)}
+.sDis{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+
+/* ════════ CHIPS ════════ */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:5px 14px;border-radius:99px;font-size:11px;font-weight:600;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all var(--tr)}
+.chip:hover{border-color:var(--border2);color:var(--teal)}
+.chip.on{background:var(--teal3);border-color:var(--border2);color:var(--teal)}
+
+/* ════════ FORMS ════════ */
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+label .req{color:var(--rose);margin-left:2px}
+.fc{
+  background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 13px;
+  color:var(--text);font-size:13px;outline:none;transition:all var(--tr);width:100%;-webkit-appearance:none;
+}
+.fc:focus{border-color:var(--border2);box-shadow:var(--glow)}
+.fc::placeholder{color:var(--text3)}
+select.fc{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer;
+}
+textarea.fc{resize:vertical;min-height:80px;line-height:1.5;font-size:12.5px}
+.fgg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fgf{grid-column:1/-1}
+.field-hint{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4}
+.bsub{
+  display:flex;align-items:center;justify-content:center;gap:8px;background:var(--teal);color:#fff;
+  font-size:13px;font-weight:600;padding:13px 22px;border-radius:10px;border:none;
+  cursor:pointer;transition:all var(--tr);width:100%;margin-top:18px;
+  box-shadow:0 2px 14px rgba(71,181,212,.25);
+}
+.bsub:hover{background:var(--teal2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(71,181,212,.35)}
+.bdng{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(224,85,112,.08);border:1px solid rgba(224,85,112,.25);color:var(--rose);
+  font-size:12px;font-weight:600;padding:12px 20px;border-radius:10px;cursor:pointer;transition:all var(--tr);width:100%;
+}
+.bdng:hover{background:rgba(224,85,112,.16)}
+.bsec{
+  display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);font-size:12px;font-weight:600;padding:12px 20px;border-radius:10px;cursor:pointer;transition:all var(--tr);
+}
+.bsec:hover{border-color:var(--border2);color:var(--teal)}
+
+/* ════════ UCID REVEAL ════════ */
+.ur{background:var(--teal4);border:1px solid var(--border2);border-radius:var(--rl);padding:18px;text-align:center;display:none;margin:16px 0 0}
+.ur.on{display:block;animation:fi .3s ease}
+.url{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:8px}
+.urv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);word-break:break-all;line-height:1.8}
+.urc{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 16px;border-radius:7px;font-size:10px;font-weight:700;background:var(--teal3);border:1px solid var(--border2);color:var(--teal);cursor:pointer;transition:all var(--tr)}
+.urc:hover{background:rgba(71,181,212,.22)}
+
+/* ════════ ALERTS ════════ */
+.ali{
+  display:flex;align-items:flex-start;gap:14px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rl);padding:16px;transition:all var(--tr);animation:fi .3s ease;margin-bottom:12px;
+}
+.ali.critical{border-color:rgba(224,85,112,.3);background:rgba(224,85,112,.03)}
+.ali.high{border-color:rgba(212,168,71,.3);background:rgba(212,168,71,.03)}
+.ali.medium{border-color:rgba(90,164,212,.3);background:rgba(90,164,212,.03)}
+.ali-ic{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ali-ic.critical{background:rgba(224,85,112,.15);color:var(--rose)}
+.ali-ic.high{background:rgba(212,168,71,.15);color:var(--gold)}
+.ali-ic.medium{background:rgba(90,164,212,.15);color:var(--sky)}
+.ali-b{flex:1;min-width:0}
+.ali-t{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;font-family:'Playfair Display',serif}
+.ali-d{font-size:11.5px;color:var(--text2);line-height:1.5}
+.ali-m{font-size:9.5px;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:4px}
+.ali-a{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.abtn{padding:6px 14px;border-radius:7px;font-size:10.5px;font-weight:600;cursor:pointer;transition:all var(--tr);border:1px solid}
+.ar{background:rgba(88,196,154,.1);border-color:rgba(88,196,154,.25);color:var(--mint)}
+.ar:hover{background:rgba(88,196,154,.2)}
+.ad{background:var(--bg3);border-color:var(--border);color:var(--text3)}
+.ad:hover{color:var(--text);border-color:var(--border2)}
+.auth-lock{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:5px 10px;cursor:not-allowed}
+
+/* ════════ AUDIT LOG ════════ */
+.audit-wrap{overflow-x:auto}
+.audit-table{width:100%;border-collapse:collapse;min-width:780px}
+.audit-table th{padding:10px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap}
+.audit-table td{padding:10px 14px;font-size:11.5px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle}
+.audit-table tbody tr{transition:background var(--tr)}
+.audit-table tbody tr:hover{background:var(--bg3)}
+.audit-table tbody tr:last-child td{border-bottom:none}
+.at-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--text3);white-space:nowrap}
+.at-session{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text4)}
+.at-ip{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--text3)}
+.auR{padding:2px 8px;border-radius:5px;font-size:8.5px;font-weight:700;letter-spacing:.8px;white-space:nowrap;flex-shrink:0;display:inline-block}
+.rPO{background:rgba(90,164,212,.12);color:var(--sky)}
+.rDC{background:rgba(71,181,212,.1);color:var(--teal)}
+.rJU{background:rgba(212,168,71,.12);color:var(--gold)}
+.rNC{background:rgba(168,85,247,.12);color:#c084fc}
+.rSY{background:var(--bg3);color:var(--text3)}
+.at-sev{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;margin-right:6px}
+.sev-info{background:var(--sky)}.sev-warn{background:var(--gold)}.sev-crit{background:var(--rose)}
+.at-type{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.typ-reg{background:rgba(88,196,154,.12);color:var(--mint)}
+.typ-view{background:rgba(90,164,212,.1);color:var(--sky)}
+.typ-edit{background:rgba(212,168,71,.1);color:var(--gold)}
+.typ-auth{background:rgba(168,85,247,.12);color:#c084fc}
+.typ-alert{background:rgba(224,85,112,.1);color:var(--rose)}
+.typ-sys{background:var(--bg3);color:var(--text3)}
+
+.audit-filters{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+
+/* ════════ TIMELINE ════════ */
+.tli{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.tli:last-child{border-bottom:none}
+.tld{width:8px;height:8px;border-radius:50%;background:var(--teal);margin-top:5px;flex-shrink:0;box-shadow:0 0 6px rgba(71,181,212,.4)}
+.tlt{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3)}
+.tla{font-size:11.5px;color:var(--text2);margin-top:2px;line-height:1.4}
+
+/* ════════ AGENCY GRID ════════ */
+.agg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.agc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;transition:all var(--tr)}
+.agc:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--sh2)}
+.agn{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;margin-top:6px}
+.aga{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.df{background:var(--mint)}.dl{background:var(--gold)}.dr{background:var(--sky)}
+
+/* ════════ DATA PROTECTION ════════ */
+.dpg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dpc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;gap:12px;align-items:flex-start;transition:all var(--tr)}
+.dpc:hover{border-color:var(--border2)}
+.dpt{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.dpd{font-size:10.5px;color:var(--text3);line-height:1.6}
+
+/* ════════ PROGRESS ════════ */
+.pb{height:3px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-top:10px}
+.pf{height:100%;border-radius:99px;transition:width 1s ease}
+
+/* ════════ EMPTY ════════ */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty i{font-size:38px;margin-bottom:14px;opacity:.2;display:block}
+.empty p{font-size:12.5px;line-height:1.5}
+
+/* ════════ ACCESS DENIED ════════ */
+.access-denied{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px;text-align:center;
+}
+.access-denied-icon{
+  width:72px;height:72px;border-radius:18px;
+  background:rgba(224,85,112,.1);border:1px solid rgba(224,85,112,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;color:var(--rose);margin-bottom:20px;
+}
+.access-denied h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:10px}
+.access-denied p{font-size:13px;color:var(--text3);max-width:340px;line-height:1.6}
+.access-denied-role{
+  margin-top:16px;padding:8px 20px;border-radius:99px;
+  background:rgba(224,85,112,.08);border:1px solid rgba(224,85,112,.2);
+  font-size:11px;font-weight:600;color:var(--rose);letter-spacing:.5px;
+}
+
+/* ════════ TOAST ════════ */
+#tw{position:fixed;bottom:80px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:9999;pointer-events:none}
+.toast{
+  display:flex;align-items:center;gap:11px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;font-size:12.5px;box-shadow:var(--shadow);
+  min-width:240px;max-width:320px;animation:fi .3s ease;pointer-events:all;
+}
+.toast.s{border-color:rgba(88,196,154,.35)}
+.toast.e{border-color:rgba(224,85,112,.35)}
+.toast.w{border-color:rgba(212,168,71,.35)}
+.tc{margin-left:auto;cursor:pointer;color:var(--text3);font-size:16px;padding:0 2px;flex-shrink:0}
+
+/* ════════ MODAL ════════ */
+.mo{
+  display:none;position:fixed;inset:0;
+  background:rgba(8,15,30,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  z-index:500;align-items:flex-end;justify-content:center;
+}
+.mo.on{display:flex;animation:mofi .22s ease}
+@keyframes mofi{from{opacity:0}to{opacity:1}}
+.mob{
+  background:var(--bg2);border:1px solid var(--border);
+  width:100%;max-width:660px;border-radius:var(--rxl) var(--rxl) 0 0;
+  padding:24px 20px;max-height:92dvh;overflow-y:auto;
+  animation:moup .28s cubic-bezier(.34,1.35,.64,1);
+}
+@keyframes moup{from{transform:translateY(44px);opacity:0}to{transform:translateY(0);opacity:1}}
+.moh_{width:36px;height:4px;background:var(--bg5);border-radius:99px;margin:0 auto 18px}
+.mohd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.mul{font-size:8px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:var(--teal);margin-bottom:5px}
+.muv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);word-break:break-all;line-height:1.7}
+.mox{
+  width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text3);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;
+  transition:all var(--tr);flex-shrink:0;
+}
+.mox:hover{background:rgba(224,85,112,.15);color:var(--rose);border-color:rgba(224,85,112,.3)}
+.mos{font-family:'Playfair Display',serif;font-size:11px;font-weight:600;color:var(--text3);margin:16px 0 12px;padding-top:16px;border-top:1px solid var(--border)}
+.mos:first-of-type{margin-top:0;padding-top:0;border-top:none}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.il{font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.iv{font-size:13px;color:var(--text);font-weight:500}
+.moa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+
+.rl_{display:block}
+.theme-btn{width:36px;height:36px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;font-size:15px;transition:all var(--tr);flex-shrink:0}
+.theme-btn:hover{border-color:var(--border2);color:var(--gold);background:rgba(212,168,71,.08)}
+
+/* ════════ BOTTOM NAV ════════ */
+#bnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.bni{display:flex}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;font-size:9.5px;font-weight:500;color:var(--text3);cursor:pointer;transition:all var(--tr);position:relative;gap:4px}
+.bn i{font-size:18px}
+.bn.on{color:var(--teal)}
+.bn.hidden{display:none}
+.bnd{position:absolute;top:8px;right:calc(50% - 14px);width:7px;height:7px;border-radius:50%;background:var(--rose);display:none;border:2px solid var(--bg2)}
+.bnd.on{display:block}
+
+/* ════════ RESPONSIVE ════════ */
+@media(max-width:900px){
+  #sidebar{display:none}
+  #bnav{display:block}
+  #main{padding-bottom:calc(var(--bh)+20px+env(safe-area-inset-bottom))}
+  .sg4{grid-template-columns:repeat(2,1fr)}
+  .cr{grid-template-columns:1fr}
+  .agg{grid-template-columns:repeat(2,1fr)}
+  .dpg{grid-template-columns:1fr}
+  .fgg{grid-template-columns:1fr}
+  .fgf{grid-column:auto}
+  .moa{grid-template-columns:1fr}
+  #tw{bottom:calc(var(--bh)+12px)}
+  .tbl-d{display:none}
+  .ccs{display:flex}
+  .cr.three{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  #hdr{padding:0 12px;gap:8px}
+  .logo-sub{display:none}
+  .bg span{display:none}
+  .bg{padding:8px 11px}
+  .sg4,.sg3{grid-template-columns:repeat(2,1fr)}
+  .agg{grid-template-columns:1fr 1fr}
+  .ph-t{font-size:20px}
+  .sc-v{font-size:28px}
+  .mob{padding:18px 14px}
+  .moa{grid-template-columns:1fr}
+  .ig{grid-template-columns:1fr 1fr}
+  #main{padding:16px 13px}
+}
+@media(min-width:901px){
+  .hdr-s{display:flex}
+  .tbl-d{display:table}
+  .rl_{display:grid;grid-template-columns:1fr 320px;gap:22px}
+  .mo{align-items:center;padding:20px}
+  .mob{border-radius:var(--rxl);max-height:90vh}
+  .moh_{display:none}
+  .cr.three{grid-template-columns:2fr 1fr}
+}
+
+/* ════════════════════════════════════════════════
+   ADMIN PANEL
+════════════════════════════════════════════════ */
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.adm-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:900px){.adm-grid{grid-template-columns:1fr}.adm-grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.adm-grid3{grid-template-columns:1fr}}
+
+/* Live user rows */
+.lu-row{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--border);
+  animation:fi .3s ease;
+}
+.lu-row:last-child{border-bottom:none}
+.lu-av{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.lu-pulse{width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0;position:relative}
+.lu-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(88,196,154,.35);animation:pulse 2s infinite}
+.lu-pulse.idle{background:var(--gold)}
+.lu-pulse.idle::after{background:rgba(212,168,71,.3)}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.6);opacity:0}}
+
+/* System status tiles */
+.sys-tile{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;display:flex;align-items:center;gap:12px;transition:all var(--tr);
+}
+.sys-tile:hover{border-color:var(--border2)}
+.sys-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sys-ok .sys-ic{background:rgba(88,196,154,.15);color:var(--mint)}
+.sys-warn .sys-ic{background:rgba(212,168,71,.15);color:var(--gold)}
+.sys-err .sys-ic{background:rgba(224,85,112,.15);color:var(--rose)}
+.sys-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.2}
+.sys-status{font-size:10px;margin-top:2px}
+.sys-ok .sys-status{color:var(--mint)}
+.sys-warn .sys-status{color:var(--gold)}
+.sys-err .sys-status{color:var(--rose)}
+.sys-ms{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text4);margin-top:2px}
+.sys-dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.sys-ok .sys-dot{background:var(--mint);box-shadow:0 0 6px var(--mint)}
+.sys-warn .sys-dot{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+.sys-err .sys-dot{background:var(--rose);box-shadow:0 0 6px var(--rose);animation:pulse 1s infinite}
+
+/* Breach detection */
+.threat-bar{height:6px;border-radius:99px;background:var(--bg3);overflow:hidden;margin-top:8px}
+.threat-fill{height:100%;border-radius:99px;transition:width 1s ease}
+.threat-low .threat-fill{background:var(--mint)}
+.threat-med .threat-fill{background:var(--gold)}
+.threat-high .threat-fill{background:var(--rose)}
+
+.breach-event{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--border);
+  animation:fi .3s ease;
+}
+.breach-event:last-child{border-bottom:none}
+.be-sev{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.be-low{background:var(--mint)}.be-med{background:var(--gold)}.be-high{background:var(--rose)}
+.be-crit{background:var(--rose);animation:pulse .8s infinite}
+.be-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3)}
+.be-msg{font-size:11.5px;color:var(--text2);margin-top:2px;line-height:1.4}
+.be-score{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-top:3px;display:inline-block}
+.sc-low{background:rgba(88,196,154,.12);color:var(--mint)}
+.sc-med{background:rgba(212,168,71,.12);color:var(--gold)}
+.sc-high{background:rgba(224,85,112,.12);color:var(--rose)}
+
+/* BREACH LOCKDOWN OVERLAY */
+#breachOverlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(4,8,18,.97);backdrop-filter:blur(20px);
+  flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:24px;
+}
+#breachOverlay.on{display:flex;animation:fi .4s ease}
+.breach-icon{
+  width:88px;height:88px;border-radius:24px;
+  background:rgba(224,85,112,.15);border:2px solid rgba(224,85,112,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;margin:0 auto 24px;
+  animation:brpulse 1.2s ease-in-out infinite;
+}
+@keyframes brpulse{0%,100%{box-shadow:0 0 0 0 rgba(224,85,112,.4)}50%{box-shadow:0 0 0 16px rgba(224,85,112,0)}}
+.breach-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:800;color:var(--rose);margin-bottom:10px}
+.breach-sub{font-size:13px;color:#8daabf;max-width:500px;line-height:1.7;margin-bottom:24px}
+.breach-key-box{
+  background:rgba(224,85,112,.08);border:1px solid rgba(224,85,112,.3);
+  border-radius:12px;padding:16px 24px;margin-bottom:24px;max-width:600px;width:100%;
+}
+.breach-key-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rose);margin-bottom:8px}
+.breach-key-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:#e8f0f8;word-break:break-all;line-height:1.8}
+.breach-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.breach-btn-primary{
+  display:flex;align-items:center;gap:8px;padding:13px 24px;
+  background:var(--rose);color:#fff;border:none;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.breach-btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.breach-btn-sec{
+  display:flex;align-items:center;gap:8px;padding:13px 24px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#8daabf;
+  border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.breach-btn-sec:hover{background:rgba(255,255,255,.1);color:#e8f0f8}
+.breach-ticker{
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(224,85,112,.6);
+  letter-spacing:2px;margin-top:20px;text-transform:uppercase;
+}
+
+/* Encryption progress */
+.enc-progress{
+  width:100%;max-width:480px;margin:16px auto 0;
+}
+.enc-bar-wrap{height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.enc-bar{height:100%;background:linear-gradient(90deg,var(--rose),#ff8fa3);border-radius:99px;width:0%;transition:width .4s ease}
+.enc-label{font-size:10px;color:rgba(224,85,112,.7);margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+/* Admin stat cards */
+.adm-stat{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);
+  padding:16px;display:flex;align-items:center;gap:14px;
+}
+.adm-stat-ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.adm-stat-v{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.adm-stat-l{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+
+/* ── Quote Machine ── */
+.quote-machine{
+  background:linear-gradient(135deg,rgba(17,138,178,.08),rgba(6,214,160,.05));
+  border:1.5px solid rgba(17,138,178,.18);
+  border-radius:16px;padding:16px 18px;margin-bottom:18px;
+  position:relative;overflow:hidden;
+}
+.quote-ic{
+  position:absolute;top:10px;left:14px;font-size:32px;
+  font-family:Georgia,serif;color:rgba(17,138,178,.2);line-height:1;font-weight:900;
+  pointer-events:none;
+}
+.quote-text{
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;
+  color:#1a3a4a;line-height:1.6;padding-left:18px;
+  transition:opacity .3s ease;
+}
+[data-theme="dark"] .quote-text{color:#b8d4e8}
+.quote-meta{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-left:18px}
+.quote-author{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;transition:opacity .3s ease}
+.quote-dots{display:flex;gap:4px;align-items:center}
+.quote-dot{width:5px;height:5px;border-radius:50%;background:rgba(17,138,178,.2);transition:background .3s,transform .3s}
+.quote-dot.on{background:#118AB2;transform:scale(1.3)}
+
+/* Shell — hidden until login */
+#shell{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+
+/* Role picker + missing child overlay modals */
+.overlay-modal{
+  display:none;position:fixed;inset:0;
+  align-items:center;justify-content:center;padding:20px;
+}
+.overlay-modal.open{display:flex;animation:mofi .22s ease}
+
+/* Role picker specific */
+#rolePickerModal{z-index:9500;background:rgba(8,15,30,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+#rolePickerModal .srm-card{max-height:90dvh;overflow-y:auto;animation:moup .28s cubic-bezier(.34,1.35,.64,1)}
+
+/* Missing child modal */
+#missingChildModal{z-index:800;background:rgba(8,15,30,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+
+/* Missing child alert styling */
+.ali.missing{
+  border-color:rgba(224,85,112,.45);
+  background:rgba(224,85,112,.04);
+  position:relative;
+}
+.ali.missing::before{
+  content:'🚨 MISSING CHILD';position:absolute;top:10px;right:12px;
+  font-size:8px;font-weight:800;letter-spacing:1.5px;color:var(--rose);
+  background:rgba(224,85,112,.12);border:1px solid rgba(224,85,112,.25);
+  padding:2px 8px;border-radius:99px;
+}
+.ali-ic.missing{background:rgba(224,85,112,.18);color:var(--rose);animation:pulse 2s infinite}
+
+/* Admin profile panel inside app */
+.admin-in-app-badge{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;
+  font-size:9px;font-weight:700;letter-spacing:.8px;
+  background:rgba(224,85,112,.1);border:1px solid rgba(224,85,112,.25);color:var(--rose);
+  margin-top:4px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<div id="loginScreen">
+  <!-- Live animated world canvas -->
+  <canvas id="worldCanvas"></canvas>
+
+  <!-- Theme toggle -->
+  <button class="login-theme" onclick="toggleTheme()" title="Toggle theme"><i class="fa-solid fa-moon" id="loginThemeIco"></i></button>
+
+  <div class="login-wrap">
+    <div class="login-card">
+
+      <!-- Portal identity banner -->
+      <div class="login-portal-banner">
+        <div class="login-portal-icon">🛡️</div>
+        <div class="login-portal-title">KCDB</div>
+        <div class="login-portal-sub">Kenya Children Data Hub</div>
+        <div class="login-kids-row">👧🏾 🧒🏽 👦🏿 👧🏻 🧒🏾</div>
+        <div class="login-portal-tagline">
+          <span>🌍</span> Protecting Every Child, Every Time <span>💙</span>
+        </div>
+      </div>
+
+      <!-- Automated Quote Machine -->
+      <div class="quote-machine" id="quoteMachine">
+        <div class="quote-ic">❝</div>
+        <div class="quote-text" id="quoteText"></div>
+        <div class="quote-meta">
+          <span class="quote-author" id="quoteAuthor"></span>
+          <div class="quote-dots" id="quoteDots"></div>
+        </div>
+      </div>
+
+      <!-- Single Sign In Button -->
+      <button class="login-btn" id="loginGateBtn" onclick="openRolePicker()">
+        <span class="login-btn-icon">🔐</span>
+        <span id="loginGateBtnTxt">Sign In to KCDB</span>
+      </button>
+
+      <div class="login-footer">
+        <div class="login-secure">
+          <i class="fa-solid fa-shield-halved"></i>
+          Secure · DPA 2019 Compliant · All access audited
+        </div>
+        Access is logged immutably. Misuse is a criminal offence (DPA 2019 s.72).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL BACKGROUND CANVAS -->
+<canvas id="portalBgCanvas"></canvas>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="shell" style="display:none">
+
+<!-- HEADER -->
+<header id="hdr">
+  <div class="logo">
+    <div class="logo-ic">🛡️</div>
+    <div>
+      <div class="logo-name">KCDB</div>
+      <div class="logo-sub">Kenya Children Data Hub</div>
+    </div>
+  </div>
+  <div class="hdr-s">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" id="gSrch" placeholder="Search UCID, county, notes…" oninput="gSearch(this.value)">
+  </div>
+  <div class="hdr-r">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+    <div class="user-chip" id="userChip" onclick="toggleProfileDropdown()">
+      <div class="user-chip-av" id="ucAv">—</div>
+      <div class="user-chip-info">
+        <span class="user-chip-name" id="ucName">—</span>
+        <span class="user-chip-role" id="ucRole">—</span>
+      </div>
+      <i class="fa-solid fa-chevron-down user-chip-caret" id="ucCaret"></i>
+      <!-- Profile Dropdown -->
+      <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
+        <div class="pd-header">
+          <div class="pd-av" id="pdAv">—</div>
+          <div class="pd-name" id="pdName">—</div>
+          <div class="pd-role" id="pdRole">—</div>
+          <div class="pd-agency" id="pdAgency">—</div>
+          <div id="pdAdminBadge" style="display:none"><span class="admin-in-app-badge"><i class="fa-solid fa-terminal" style="margin-right:3px"></i>System Administrator</span></div>
+        </div>
+        <div class="pd-body">
+          <div class="pd-item admin-entry" id="pdAdminBtn" onclick="goTabFromDropdown('admin')" style="display:none">
+            <i class="fa-solid fa-terminal"></i>
+            Admin Console
+          </div>
+          <div class="pd-item" onclick="openSwitchRole()">
+            <i class="fa-solid fa-users-gear"></i>
+            Switch Role / Agency
+          </div>
+          <div class="pd-item" onclick="goTabFromDropdown('audit')" id="pdAuditBtn">
+            <i class="fa-solid fa-list-check"></i>
+            View Audit Log
+          </div>
+          <div class="pd-sep"></div>
+          <div class="pd-item" onclick="toggleThemeFromDropdown()">
+            <i class="fa-solid fa-moon" id="pdThemeIco"></i>
+            <span id="pdThemeTxt">Toggle Dark/Light Mode</span>
+          </div>
+          <div class="pd-sep"></div>
+          <div class="pd-item danger" onclick="doLogout(); closeProfileDropdown()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Sign Out
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ib" onclick="goTab('alerts')" title="Alerts">
+      <i class="fa-solid fa-bell"></i>
+      <span class="ibdg" id="hBdg">0</span>
+    </div>
+    <button class="bg" id="hdrRegBtn" onclick="goTab('register')"><i class="fa-solid fa-fingerprint"></i><span>Generate UCID</span></button>
+  </div>
+</header>
+
+<div id="content">
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <span class="nlbl">Main</span>
+  <div class="ni on" data-t="dashboard" onclick="goTab('dashboard')"><i class="fa-solid fa-gauge-high nic"></i>Dashboard</div>
+  <div class="ni" data-t="register" onclick="goTab('register')" id="nav-register"><i class="fa-solid fa-user-plus nic"></i>Register Child</div>
+  <div class="ni" data-t="cases" onclick="goTab('cases')"><i class="fa-solid fa-folder-open nic"></i>Cases<span class="nbdg nb-a" id="sN">0</span></div>
+  <span class="nlbl">Monitoring</span>
+  <div class="ni" data-t="alerts" onclick="goTab('alerts')"><i class="fa-solid fa-triangle-exclamation nic"></i>Alerts<span class="nbdg nb-r" id="sA">0</span></div>
+  <div class="ni" data-t="audit" onclick="goTab('audit')" id="nav-audit"><i class="fa-solid fa-list-check nic"></i>Audit Log</div>
+  <div class="ni" data-t="analytics" onclick="goTab('analytics')"><i class="fa-solid fa-chart-line nic"></i>Analytics</div>
+  <span class="nlbl">System</span>
+  <div class="ni" data-t="agencies" onclick="goTab('agencies')"><i class="fa-solid fa-building-columns nic"></i>Agencies</div>
+  <div class="ni" data-t="dp" onclick="goTab('dp')"><i class="fa-solid fa-shield-halved nic"></i>Data Protection</div>
+  <div class="ni" data-t="admin" onclick="goTab('admin')" id="nav-admin" style="display:none"><i class="fa-solid fa-terminal nic"></i>Admin Console<span class="nbdg nb-r" id="sAdmAlert" style="display:none">!</span></div>
+  <div class="sf" style="margin-top:auto">
+    <div style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600"><span class="od"></span>System Online</div>
+    <p>DPA 2019 compliant · All access audited<br>UCID pseudonymised · v3.1</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+
+<!-- ══ DASHBOARD ══ -->
+<section class="pnl on" id="tab-dashboard">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Good morning, <span id="dNm">—</span></div>
+      <div class="ph-s" id="dDt"></div>
+    </div>
+    <button class="bg" id="dashRegBtn" onclick="goTab('register')"><i class="fa-solid fa-plus"></i><span> New Case</span></button>
+  </div>
+  <div class="sg sg4" id="statsGrid"><!-- stats injected --></div>
+  <div class="cr" id="chartsRow">
+    <div class="cc"><div class="cc-t">Cases by Category</div><div class="cc-s">KCDB category distribution</div><div style="height:200px;position:relative"><canvas id="cCat"></canvas></div></div>
+    <div class="cc"><div class="cc-t">Status Overview</div><div class="cc-s">Current state of all registered cases</div><div style="height:200px;position:relative"><canvas id="cStat"></canvas></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dG">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Recent Registrations</div>
+        <div onclick="goTab('cases')" style="font-size:11px;color:var(--teal);cursor:pointer;font-weight:600">View all →</div>
+      </div>
+      <div id="recL"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Active Alerts</div>
+        <div onclick="goTab('alerts')" style="font-size:11px;color:var(--rose);cursor:pointer;font-weight:600">View all →</div>
+      </div>
+      <div id="dAl"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ REGISTER CHILD ══ -->
+<section class="pnl" id="tab-register">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Register New Child</div>
+      <div class="ph-s">A cryptographic UCID is generated automatically. All starred fields are mandatory.</div>
+    </div>
+  </div>
+  <div id="registerContent"><!-- injected based on role --></div>
+</section>
+
+<!-- ══ CASES ══ -->
+<section class="pnl" id="tab-cases">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Case Records</div>
+      <div class="ph-s" id="casesSubtitle">Select any row to view the full record</div>
+    </div>
+    <button class="bg" id="casesRegBtn" onclick="goTab('register')"><i class="fa-solid fa-plus"></i><span> Register</span></button>
+  </div>
+  <div class="chips" id="catCh">
+    <div class="chip on" data-c="all">All</div>
+    <div class="chip" data-c="A">Cat. A — Conflict</div>
+    <div class="chip" data-c="B">Cat. B — Contact</div>
+    <div class="chip" data-c="C">Cat. C — Trafficked</div>
+    <div class="chip" data-c="D">Cat. D — Unaccompanied</div>
+  </div>
+  <div class="tw_">
+    <div class="tbar">
+      <div class="sb"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search UCID, county, notes…" oninput="filterCases(this.value)" id="cSr"></div>
+      <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="stFil" onchange="filterCases(document.getElementById('cSr').value)">
+        <option value="">All Statuses</option>
+        <option>Registered</option><option>In Care</option><option>In Court</option>
+        <option>Detained</option><option>Reintegrated</option><option>Discharged &amp; Anonymised</option>
+      </select>
+    </div>
+    <div class="tbl-d">
+      <table><thead><tr id="casesThead"></tr></thead><tbody id="cBd"></tbody></table>
+    </div>
+    <div class="ccs" id="cCs"></div>
+    <div class="empty" id="cEm" style="display:none"><i class="fa-solid fa-folder-open"></i><p>No cases match your filters.</p></div>
+  </div>
+</section>
+
+<!-- ══ ALERTS ══ -->
+<section class="pnl" id="tab-alerts">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Active System Alerts</div>
+      <div class="ph-s">High-priority notifications requiring authorised agency action</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div id="dismissAllWrap"></div>
+      <button class="bg missing-child-btn" id="missingChildBtn" onclick="openMissingChildModal()" style="background:linear-gradient(135deg,var(--rose),#c73a52);box-shadow:0 2px 12px rgba(224,85,112,.3)">
+        <i class="fa-solid fa-child-reaching"></i><span> Missing Child</span>
+      </button>
+    </div>
+  </div>
+  <div id="alertPermNote" style="display:none;margin-bottom:14px;padding:12px 16px;background:rgba(212,168,71,.07);border:1px solid rgba(212,168,71,.25);border-radius:10px;font-size:12px;color:var(--gold);display:flex;align-items:center;gap:10px">
+    <i class="fa-solid fa-lock"></i>
+    <span><strong>Alert Dismissal Restricted.</strong> Your role (<span id="roleLbl">—</span>) has read-only access to alerts. Only DCS and Judiciary may dismiss or resolve.</span>
+  </div>
+  <div id="alL"></div>
+</section>
+
+<!-- ══ AUDIT LOG ══ -->
+<section class="pnl" id="tab-audit">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Audit Log</div>
+      <div class="ph-s">Immutable · All access, edits, logins, and alerts permanently recorded · 10-year retention per DPA 2019</div>
+    </div>
+    <button class="bsec" style="width:auto;padding:8px 14px;font-size:11px" onclick="exportAudit()">
+      <i class="fa-solid fa-file-export"></i> Export Log
+    </button>
+  </div>
+  <div id="auditContent"><!-- injected based on role --></div>
+</section>
+
+<!-- ══ ANALYTICS ══ -->
+<section class="pnl" id="tab-analytics">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Analytics &amp; Reports</div>
+      <div class="ph-s">Aggregate and anonymised data only — no child-identifying information</div>
+    </div>
+  </div>
+  <div class="sg sg3">
+    <div class="sc tl"><div class="sc-l">Total Registered</div><div class="sc-v tl" id="aTt">0</div><div class="pb"><div class="pf" style="background:var(--teal);width:100%"></div></div></div>
+    <div class="sc rs"><div class="sc-l">Trafficking (Cat. C)</div><div class="sc-v rs" id="aCc">0</div><div class="pb"><div class="pf" style="background:var(--rose)" id="pC"></div></div></div>
+    <div class="sc sk"><div class="sc-l">In Court</div><div class="sc-v sk" id="aCt">0</div><div class="pb"><div class="pf" style="background:var(--sky)" id="pCt"></div></div></div>
+  </div>
+  <div class="cr three">
+    <div class="cc"><div class="cc-t">Registrations — Last 14 Days</div><div class="cc-s">Daily new UCID generation</div><div style="height:200px;position:relative"><canvas id="cTm"></canvas></div></div>
+    <div class="cc"><div class="cc-t">County Distribution</div><div class="cc-s">Top counties by case volume</div><div style="height:200px;position:relative"><canvas id="cCo"></canvas></div></div>
+  </div>
+  <div class="cr">
+    <div class="cc"><div class="cc-t">Trigger Events</div><div class="cc-s">How children enter the system</div><div style="height:190px;position:relative"><canvas id="cTg"></canvas></div></div>
+    <div class="cc"><div class="cc-t">Registrations by Agency</div><div class="cc-s">Which agencies generate UCIDs</div><div style="height:190px;position:relative"><canvas id="cAg"></canvas></div></div>
+  </div>
+</section>
+
+<!-- ══ AGENCIES ══ -->
+<section class="pnl" id="tab-agencies">
+  <div class="ph"><div><div class="ph-t">Mandated Agencies</div><div class="ph-s">Legally required to access &amp; update KCDB — proposed Part XVII, Children Act 2022</div></div></div>
+  <div class="agg">
+    <div class="agc"><div style="font-size:22px">🚔</div><div class="agn">Kenya Police Service</div><div class="aga"><span class="dot df"></span>Active</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Registers Cat. A children on arrest. Generates UCID within 24 hrs. Transfers custody to DCS or remand home.</p></div>
+    <div class="agc"><div style="font-size:22px">🏛️</div><div class="agn">Dept. of Children Services</div><div class="aga"><span class="dot df"></span>Active</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Lead coordinating agency. Updates placement, reintegration, and case closure. Manages care orders.</p></div>
+    <div class="agc"><div style="font-size:22px">⚖️</div><div class="agn">Judiciary — Children's Courts</div><div class="aga"><span class="dot df"></span>Active</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Registers Cat. B case filings. Updates court status, orders, and sentencing outcomes.</p></div>
+    <div class="agc"><div style="font-size:22px">🏥</div><div class="agn">Ministry of Health</div><div class="aga"><span class="dot dl"></span>Partial Integration</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Refers Cat. C children (abuse, FGM). Updates medical clearance and referral status.</p></div>
+    <div class="agc"><div style="font-size:22px">🛂</div><div class="agn">Kenya Immigration Service</div><div class="aga"><span class="dot df"></span>Active</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Registers Cat. D unaccompanied minors at border crossings. Coordinates with UNHCR.</p></div>
+    <div class="agc"><div style="font-size:22px">📋</div><div class="agn">NCCS / NGO Partners</div><div class="aga"><span class="dot dr"></span>Read-only Access</div><p style="font-size:10.5px;color:var(--text3);margin-top:8px;line-height:1.6">Oversight and monitoring role. Cannot register or update; read-only analytics access.</p></div>
+  </div>
+</section>
+
+<!-- ══ DATA PROTECTION ══ -->
+<section class="pnl" id="tab-dp">
+  <div class="ph"><div><div class="ph-t">Data Protection Framework</div><div class="ph-s">DPA 2019 · Constitution of Kenya Art. 31 · UN CRC Art. 16</div></div></div>
+  <div class="dpg" style="margin-bottom:18px">
+    <div class="dpc"><div style="font-size:22px;flex-shrink:0">🔐</div><div><div class="dpt">UCID — Pseudonymisation</div><div class="dpd">The Unique Child Identifier contains zero personally identifiable information. It is cryptographically generated (UUID v4) and irreversibly pseudonymised. No name, birth date, or biometric data is stored.</div></div></div>
+    <div class="dpc"><div style="font-size:22px;flex-shrink:0">📋</div><div><div class="dpt">Data Minimisation (S.25 DPA 2019)</div><div class="dpd">Upon discharge, all remaining descriptive data is purged. Only aggregate, anonymised statistics are retained for research. The discharge action is irreversible and triggers a critical audit entry.</div></div></div>
+    <div class="dpc"><div style="font-size:22px;flex-shrink:0">🔒</div><div><div class="dpt">Access Control &amp; Role Separation</div><div class="dpd">Role-based access control (RBAC) ensures each agency sees only the data relevant to their mandate. Police cannot view judiciary records and vice versa. NCCS has read-only analytics access.</div></div></div>
+    <div class="dpc"><div style="font-size:22px;flex-shrink:0">📜</div><div><div class="dpt">Immutable Audit Trail</div><div class="dpd">Every view, edit, login, and registration is permanently logged with timestamp, session ID, simulated IP, and officer identity. Retention: 10 years per DPA 2019 s.49.</div></div></div>
+  </div>
+  <div class="card">
+    <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;margin-bottom:14px">Offences &amp; Penalties — Proposed KCDB Provisions</div>
+    <table><thead><tr><th>Offence</th><th>Penalty</th></tr></thead>
+    <tbody>
+      <tr><td style="color:var(--text)">Failure to register a triggering event within 24 hours</td><td><span class="bdg sCourt">KES 200,000 or 2 years</span></td></tr>
+      <tr><td style="color:var(--text)">Unauthorised access to KCDB records</td><td><span class="bdg sDet">3 years / KES 500,000</span></td></tr>
+      <tr><td style="color:var(--text)">Tampering with or falsifying UCID records</td><td><span class="bdg bC">5 years / KES 1,000,000</span></td></tr>
+      <tr><td style="color:var(--text)">Disclosure of UCID to unauthorised persons</td><td><span class="bdg bC">5 yrs / KES 1,000,000</span></td></tr>
+      <tr><td style="color:var(--text)">Official complicity in using KCDB to facilitate trafficking</td><td><span class="bdg bC">Maximum — no fine option</span></td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<!-- ══ ADMIN CONSOLE ══ -->
+<section class="pnl" id="tab-admin">
+  <div class="ph">
+    <div>
+      <div class="ph-t">Admin Console</div>
+      <div class="ph-s">Live session monitoring · System health · Breach detection &amp; response · Encryption controls</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bsec" style="width:auto;padding:8px 14px;font-size:11px" onclick="refreshAdminPanel()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      <button class="bdng" style="width:auto;padding:8px 16px;font-size:11px" onclick="simulateBreachDetected('manual','Admin-initiated drill','CRITICAL')"><i class="fa-solid fa-shield-virus"></i> Breach Drill</button>
+    </div>
+  </div>
+
+  <!-- Top stat row -->
+  <div class="adm-grid3" id="admStatRow">
+    <div class="adm-stat">
+      <div class="adm-stat-ic" style="background:rgba(71,181,212,.12);color:var(--teal)"><i class="fa-solid fa-users"></i></div>
+      <div><div class="adm-stat-v" id="admLiveCount">0</div><div class="adm-stat-l">Live Sessions</div></div>
+    </div>
+    <div class="adm-stat">
+      <div class="adm-stat-ic" style="background:rgba(88,196,154,.12);color:var(--mint)"><i class="fa-solid fa-server"></i></div>
+      <div><div class="adm-stat-v" id="admSysOk">0</div><div class="adm-stat-l">Systems Online</div></div>
+    </div>
+    <div class="adm-stat">
+      <div class="adm-stat-ic" style="background:rgba(212,168,71,.12);color:var(--gold)"><i class="fa-solid fa-shield-halved"></i></div>
+      <div><div class="adm-stat-v" id="admThreatScore" style="color:var(--mint)">LOW</div><div class="adm-stat-l">Threat Level</div></div>
+    </div>
+  </div>
+
+  <div class="adm-grid">
+    <!-- Live Users -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Live Sessions</div>
+        <span class="uptime-chip uptime-ok" id="liveUsersBadge"><span class="od" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);margin-right:3px"></span>Tracking Active</span>
+      </div>
+      <div id="liveUsersList"><div class="empty" style="padding:20px 0"><i class="fa-solid fa-users" style="font-size:24px;margin-bottom:8px"></i><p>No active sessions detected</p></div></div>
+    </div>
+
+    <!-- System Health -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">System Health</div>
+        <span class="uptime-chip uptime-ok" id="sysHealthBadge">All Systems Operational</span>
+      </div>
+      <div id="sysHealthList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:10px;color:var(--text3)">Last checked: <span id="sysLastCheck" style="font-family:'JetBrains Mono',monospace">—</span></span>
+        <span style="font-size:10px;color:var(--text3)">Uptime: <span style="color:var(--mint);font-weight:600" id="sysUptime">99.98%</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breach Detection -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600">Breach Detection Engine</div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:2px">Real-time anomaly detection · Behavioural analytics · Pattern correlation</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Composite Risk Score</div>
+          <div style="font-size:22px;font-weight:700;font-family:'Playfair Display',serif;color:var(--mint)" id="riskScoreVal">0 / 100</div>
+        </div>
+        <div style="min-width:140px">
+          <div id="threatBarWrap" class="threat-bar threat-low"><div class="threat-fill" id="threatFill" style="width:0%"></div></div>
+          <div style="font-size:9px;color:var(--text3);margin-top:4px" id="threatLabel">Risk: LOW — System nominal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detection rules grid -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px" id="detectionRules"></div>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-top:12px;border-top:1px solid var(--border)">Detection Log</div>
+    <div id="breachLog" style="max-height:240px;overflow-y:auto"></div>
+  </div>
+
+  <!-- Encryption & Response -->
+  <div class="adm-grid">
+    <div class="card">
+      <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;margin-bottom:4px">Encryption Controls</div>
+      <div style="font-size:10.5px;color:var(--text3);margin-bottom:14px">AES-256-GCM · Web Crypto API · Zero-knowledge key generation</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Encryption Status</div>
+          <div style="display:flex;align-items:center;gap:8px" id="encStatusRow">
+            <span class="bdg sRein" id="encStatusBadge"><i class="fa-solid fa-unlock" style="margin-right:3px"></i>Data Unencrypted</span>
+            <span style="font-size:10px;color:var(--text3)" id="encFieldCount">6 active records</span>
+          </div>
+        </div>
+        <button class="bsub" style="margin-top:0;background:rgba(212,168,71,.15);border:1px solid rgba(212,168,71,.3);color:var(--gold);box-shadow:none;font-size:12px;padding:11px" onclick="manualEncrypt()">
+          <i class="fa-solid fa-lock"></i> Encrypt All Records Now
+        </button>
+        <button class="bsec" style="font-size:11px;padding:10px" onclick="manualDecrypt()">
+          <i class="fa-solid fa-key"></i> Decrypt (Enter Key)
+        </button>
+        <div style="font-size:10px;color:var(--text3);line-height:1.6;padding:8px 0;border-top:1px solid var(--border)">
+          <i class="fa-solid fa-info-circle" style="margin-right:4px;color:var(--teal)"></i>
+          On confirmed breach, all PII fields are encrypted automatically. Only the admin holds the decryption key. All users are locked out and notified immediately.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;margin-bottom:4px">Incident Response</div>
+      <div style="font-size:10.5px;color:var(--text3);margin-bottom:14px">Playbook · Notifications · Audit preservation</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="responsePlaybook"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div><!-- #content -->
+
+<!-- BOTTOM NAV -->
+<nav id="bnav">
+  <div class="bni">
+    <div class="bn on" data-t="dashboard" onclick="goTab('dashboard')"><i class="fa-solid fa-gauge-high"></i><span>Home</span></div>
+    <div class="bn" data-t="register" onclick="goTab('register')" id="bn-register"><i class="fa-solid fa-user-plus"></i><span>Register</span></div>
+    <div class="bn" data-t="cases" onclick="goTab('cases')"><i class="fa-solid fa-folder-open"></i><span>Cases</span></div>
+    <div class="bn" data-t="alerts" onclick="goTab('alerts')"><i class="fa-solid fa-bell"></i><span>Alerts</span><span class="bnd" id="bnD"></span></div>
+    <div class="bn" data-t="analytics" onclick="goTab('analytics')"><i class="fa-solid fa-chart-line"></i><span>Stats</span></div>
+  </div>
+</nav>
+</div><!-- #shell -->
+
+<!-- MODAL -->
+<div class="mo" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mob" onclick="event.stopPropagation()">
+    <div class="moh_"></div>
+    <div class="mohd">
+      <div><div class="mul">Unique Child Identifier</div><div class="muv" id="mUC"></div></div>
+      <div class="mox" onclick="closeModal()">×</div>
+    </div>
+    <div class="mos">Case Information</div>
+    <div class="ig">
+      <div><div class="il">Category</div><div class="iv" id="mCa"></div></div>
+      <div><div class="il">Trigger Event</div><div class="iv" id="mTr"></div></div>
+      <div><div class="il">County</div><div class="iv" id="mCo"></div></div>
+      <div><div class="il">Legal Aid Status</div><div class="iv" id="mLe"></div></div>
+      <div><div class="il">Estimated Age</div><div class="iv" id="mAge"></div></div>
+      <div><div class="il">Registering Agency</div><div class="iv" id="mAg"></div></div>
+    </div>
+    <div id="modalEditSection">
+      <div class="mos">Update Record</div>
+      <div class="fgg">
+        <div class="fg"><label>Status <span class="req">*</span></label>
+          <select class="fc" id="mSt"><option>Registered</option><option>In Care</option><option>In Court</option><option>Detained</option><option>Reintegrated</option></select>
+        </div>
+        <div class="fg"><label>Current Placement</label><input type="text" class="fc" id="mPl"></div>
+        <div class="fg fgf"><label>Case Notes Update</label><textarea class="fc" id="mNo" rows="3"></textarea></div>
+      </div>
+      <div class="moa" id="modalActions">
+        <button class="bsub" style="margin-top:0;font-size:12px;padding:12px" onclick="updateChild()"><i class="fa-solid fa-floppy-disk"></i> Save Updates</button>
+        <button class="bdng" onclick="dischargeChild()"><i class="fa-solid fa-box-archive"></i> Discharge &amp; Anonymise</button>
+      </div>
+    </div>
+    <div class="mos">Audit Trail</div>
+    <div id="mTl" style="max-height:180px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- BREACH LOCKDOWN OVERLAY -->
+<div id="breachOverlay">
+  <div class="breach-icon">🔴</div>
+  <div class="breach-title">DATA BREACH DETECTED</div>
+  <div class="breach-sub" id="breachOverlaySub">
+    A critical security event has been detected. All sensitive case data has been encrypted with AES-256-GCM.
+    Your session has been flagged. All agencies have been notified. Do not close this window.
+  </div>
+  <div class="breach-key-box">
+    <div class="breach-key-label">🔑 Emergency Decryption Key — Admin Eyes Only</div>
+    <div class="breach-key-val" id="breachKeyDisplay">Generating secure key…</div>
+    <div style="font-size:9px;color:rgba(224,85,112,.6);margin-top:8px">Copy and store this key immediately. It cannot be regenerated. Required to restore access after incident resolution.</div>
+  </div>
+  <div class="enc-progress">
+    <div class="enc-bar-wrap"><div class="enc-bar" id="encProgressBar"></div></div>
+    <div class="enc-label" id="encProgressLabel">Encrypting records… 0%</div>
+  </div>
+  <div class="breach-actions" style="margin-top:20px">
+    <button class="breach-btn-primary" onclick="copyBreachKey()"><i class="fa-solid fa-copy"></i> Copy Key</button>
+    <button class="breach-btn-primary" onclick="acknowledgeBreachAdmin()" id="ackBtn" style="display:none;background:var(--mint)"><i class="fa-solid fa-check-shield"></i> Acknowledge &amp; Secure</button>
+    <button class="breach-btn-sec" onclick="closeBreachOverlay()"><i class="fa-solid fa-eye-slash"></i> Minimise to Admin Panel</button>
+  </div>
+  <div class="breach-ticker" id="breachTicker">⚠ KCDB SECURITY INCIDENT · ENCRYPTION IN PROGRESS · ALL SESSIONS FLAGGED ⚠</div>
+</div>
+
+<!-- BREACH BANNER (minimised) -->
+<div id="breachBanner" style="display:none;position:fixed;top:var(--hh);left:0;right:0;z-index:600;background:var(--rose);color:#fff;padding:9px 16px;font-size:12px;font-weight:600;display:none;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('breachOverlay').classList.add('on')">
+  <i class="fa-solid fa-shield-virus"></i>
+  <span id="breachBannerTxt">SECURITY BREACH DETECTED — Data encrypted. Click to view incident details.</span>
+  <span style="margin-left:auto;font-size:10px;opacity:.8" id="breachBannerTime"></span>
+</div>
+
+<!-- SWITCH ROLE MODAL -->
+<div id="switchRoleModal" onclick="if(event.target===this)closeSwitchRole()">
+  <div class="srm-card">
+    <div class="srm-title">Switch Agency Role</div>
+    <div class="srm-sub">Select a new role to continue. Your current session will remain audited.</div>
+    <button class="srm-close" onclick="closeSwitchRole()">×</button>
+    <div class="role-cards" id="switchRoleCards" style="max-height:320px"></div>
+    <button class="srm-btn" id="switchRoleBtn" onclick="doSwitchRole()" disabled>
+      <i class="fa-solid fa-users-gear" style="margin-right:8px"></i>
+      <span id="switchRoleBtnTxt">Select a Role to Continue</span>
+    </button>
+  </div>
+</div>
+
+<!-- ROLE PICKER MODAL (Login Gate) -->
+<div id="rolePickerModal" class="overlay-modal" onclick="if(event.target===this)closeRolePicker()">
+  <div class="srm-card" style="max-width:460px">
+    <div style="text-align:center;margin-bottom:6px;font-size:28px">🔐</div>
+    <div class="srm-title">Agency Sign In</div>
+    <div class="srm-sub">Select your agency profile to access KCDB</div>
+    <button class="srm-close" onclick="closeRolePicker()">×</button>
+    <div class="role-cards" id="roleCards" style="max-height:320px"><!-- injected --></div>
+    <button class="srm-btn" id="loginBtn" onclick="doLogin()" disabled>
+      <span id="loginBtnIcon" style="margin-right:8px">👤</span>
+      <span id="loginBtnTxt">Select an Agency to Continue</span>
+    </button>
+    <div style="text-align:center;margin-top:12px;font-size:9.5px;color:#aaa;font-family:'Nunito',sans-serif;line-height:1.6">
+      <i class="fa-solid fa-lock" style="margin-right:4px;color:#118AB2"></i>
+      All sign-in events are permanently audited · DPA 2019
+    </div>
+  </div>
+</div>
+
+<!-- MISSING CHILD REPORT MODAL -->
+<div id="missingChildModal" class="overlay-modal" onclick="if(event.target===this)closeMissingChildModal()">
+  <div class="mob" style="max-width:520px;border-radius:var(--rxl);border-top:4px solid var(--rose)">
+    <div class="moh_"></div>
+    <div class="mohd">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rose);margin-bottom:4px">🚨 URGENT ALERT</div>
+        <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--text)">Report Missing Child</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Alert will broadcast to all agencies except Judiciary</div>
+      </div>
+      <div class="mox" onclick="closeMissingChildModal()">×</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="fg">
+        <label>UCID (if previously registered)</label>
+        <input type="text" class="fc" id="mcUcid" placeholder="KCDB-… (optional)" style="font-family:'JetBrains Mono',monospace;font-size:12px">
+        <span class="field-hint">Leave blank if child has no KCDB record yet</span>
+      </div>
+      <div class="fg">
+        <label>Estimated Age Range <span class="req">*</span></label>
+        <select class="fc" id="mcAge">
+          <option value="">— Select —</option>
+          <option>0–4 years</option><option>5–9 years</option>
+          <option>10–12 years</option><option>13–15 years</option><option>16–17 years</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>County / Area Last Seen <span class="req">*</span></label>
+        <select class="fc" id="mcCounty">
+          <option value="">— Select county —</option>
+          <option>Nairobi</option><option>Mombasa</option><option>Kisumu</option>
+          <option>Nakuru</option><option>Eldoret / Uasin Gishu</option><option>Kilifi</option>
+          <option>Kwale</option><option>Garissa</option><option>Machakos</option>
+          <option>Kiambu</option><option>Kakamega</option><option>Nyeri</option><option>Other / Unknown</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Circumstances / Description <span class="req">*</span></label>
+        <textarea class="fc" id="mcDesc" rows="3" placeholder="Describe anonymously — no real names. Include physical description, clothing, last known location and time…"></textarea>
+        <span class="field-hint">Minimum 20 characters. Do NOT include tribal identifiers or full names.</span>
+      </div>
+      <div class="fg">
+        <label>Reporting Officer Service No. <span class="req">*</span></label>
+        <input type="text" class="fc" id="mcOfficer" placeholder="e.g. KPS/2024/001423">
+      </div>
+    </div>
+    <div id="mcErr" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(224,85,112,.1);border:1px solid rgba(224,85,112,.3);border-radius:8px;font-size:11.5px;color:var(--rose)"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+      <button class="bsec" onclick="closeMissingChildModal()">Cancel</button>
+      <button class="bsub" style="margin-top:0;background:linear-gradient(135deg,var(--rose),#c73a52);box-shadow:0 4px 18px rgba(224,85,112,.35)" onclick="submitMissingChild()">
+        <i class="fa-solid fa-tower-broadcast"></i> Broadcast Alert
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="tw"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   ROLE DEFINITIONS & PERMISSIONS
+══════════════════════════════════════════════ */
+const ROLES = {
+  police: {
+    name: 'Sgt. Kipchoge',
+    ini: 'SK',
+    col: '#5aa4d4',
+    label: 'POLICE',
+    agency: 'Kenya Police Service',
+    canDismiss: false,
+    canRegister: true,         // can generate UCID
+    canEdit: false,            // cannot update case status (DCS/Judiciary only)
+    canDischarge: false,
+    canViewAudit: false,       // audit log restricted
+    canViewFullCases: false,   // only sees Cat. A cases
+    canViewAnalytics: false,   // no analytics
+    visibleCategories: ['A'],  // Cat A only — CICL
+    visibleStatuses: ['Registered','Detained'],
+    // What columns they see in case table
+    caseColumns: ['UCID','Category','Trigger Event','County','Status','Date Registered'],
+    // What modal sections they see
+    modalEdit: false,          // read-only modal
+    description: 'Kenya Police Service',
+    permTags: [
+      {t:'Register Cat. A', c:'green'},
+      {t:'View Cat. A', c:'green'},
+      {t:'No Analytics', c:'red'},
+      {t:'No Audit Log', c:'red'},
+    ],
+    dashboardStats: ['activeCases','todayReg','pendingAlerts','detained'],
+  },
+  dcs: {
+    name: 'Jane Mwangi',
+    ini: 'JM',
+    col: '#47b5d4',
+    label: 'DCS',
+    agency: 'Dept. of Children Services',
+    canDismiss: true,
+    canRegister: true,
+    canEdit: true,
+    canDischarge: true,
+    canViewAudit: true,
+    canViewFullCases: true,
+    canViewAnalytics: true,
+    visibleCategories: ['A','B','C','D'],
+    visibleStatuses: null, // all
+    caseColumns: ['UCID','Category','Trigger Event','County','Status','Registering Agency','Date Registered'],
+    modalEdit: true,
+    description: 'Dept. of Children Services',
+    permTags: [
+      {t:'Full Access', c:'green'},
+      {t:'Edit & Discharge', c:'green'},
+      {t:'All Categories', c:'green'},
+      {t:'Audit Log', c:'green'},
+    ],
+    dashboardStats: ['activeCases','todayReg','pendingAlerts','discharged'],
+  },
+  judiciary: {
+    name: 'Hon. Achieng',
+    ini: 'HA',
+    col: '#d4a847',
+    label: 'JUDICIARY',
+    agency: "Judiciary — Children's Court",
+    canDismiss: true,
+    canRegister: true,
+    canEdit: true,
+    canDischarge: false,       // Judiciary cannot discharge — DCS only
+    canViewAudit: true,
+    canViewFullCases: false,   // sees Cat. B only (court cases)
+    canViewAnalytics: true,
+    visibleCategories: ['B'],  // court-related cases
+    visibleStatuses: ['In Court','Registered'],
+    caseColumns: ['UCID','Category','Trigger Event','County','Legal Aid','Status','Date Registered'],
+    modalEdit: true,
+    description: "Children's Court",
+    permTags: [
+      {t:'Register Cat. B', c:'green'},
+      {t:'View Cat. B', c:'green'},
+      {t:'Court Cases Only', c:''},
+      {t:'No Discharge', c:'red'},
+    ],
+    dashboardStats: ['activeCases','inCourt','pendingAlerts','legalAidPending'],
+  },
+  nccs: {
+    name: 'Dr. Maina',
+    ini: 'DM',
+    col: '#c084fc',
+    label: 'NCCS',
+    agency: 'NCCS / Oversight',
+    canDismiss: false,
+    canRegister: false,        // read-only
+    canEdit: false,
+    canDischarge: false,
+    canViewAudit: false,
+    canViewFullCases: false,   // aggregate only, no case details
+    canViewAnalytics: true,
+    visibleCategories: [],     // no case-level access
+    visibleStatuses: null,
+    caseColumns: [],
+    modalEdit: false,
+    description: 'NCCS / National Oversight',
+    permTags: [
+      {t:'Analytics Only', c:'green'},
+      {t:'No Case Access', c:'red'},
+      {t:'No Registration', c:'red'},
+      {t:'Read-Only', c:''},
+    ],
+    dashboardStats: ['activeCases','todayReg','pendingAlerts','discharged'],
+  },
+  admin: {
+    name: 'Sys. Administrator',
+    ini: 'SA',
+    col: '#e05570',
+    label: 'ADMIN',
+    agency: 'KCDB System Administration',
+    canDismiss: true,
+    canRegister: true,
+    canEdit: true,
+    canDischarge: true,
+    canViewAudit: true,
+    canViewFullCases: true,
+    canViewAnalytics: true,
+    canViewAdmin: true,
+    visibleCategories: ['A','B','C','D'],
+    visibleStatuses: null,
+    caseColumns: ['UCID','Category','Trigger Event','County','Status','Registering Agency','Date Registered'],
+    modalEdit: true,
+    description: 'System Administration',
+    permTags: [
+      {t:'Full System Access', c:'green'},
+      {t:'Admin Console', c:'green'},
+      {t:'Breach Response', c:'green'},
+      {t:'Encryption Control', c:'green'},
+    ],
+    dashboardStats: ['activeCases','todayReg','pendingAlerts','discharged'],
+  },
+};
+
+const SESSION_ID = 'SID-' + Math.random().toString(36).substr(2,9).toUpperCase();
+const SIM_IPS = ['41.204.16.','196.201.212.','105.160.35.','41.90.64.','197.232.55.'];
+function simIP(role){ const keys=Object.keys(ROLES); const b=SIM_IPS[keys.indexOf(role)%SIM_IPS.length]; return b+(Math.floor(Math.random()*200)+1); }
+
+const S = {
+  role: null,
+  children: [], audit: [], alerts: [],
+  activeModal: null, catF: 'all',
+  cI: false, aI: false,
+  theme: 'dark'
+};
+
+/* ══════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════ */
+let selectedRole = null;
+
+const ROLE_COLORS = {
+  police: { bg:'linear-gradient(135deg,#4fc3f7,#0277bd)', light:'#E3F2FD', text:'#0277bd' },
+  dcs:    { bg:'linear-gradient(135deg,#26c6da,#00838f)', light:'#E0F7FA', text:'#00838f' },
+  judiciary:{ bg:'linear-gradient(135deg,#ffca28,#f57f17)', light:'#FFFDE7', text:'#f57f17' },
+  nccs:   { bg:'linear-gradient(135deg,#ab47bc,#6a1b9a)', light:'#F3E5F5', text:'#6a1b9a' },
+  admin:  { bg:'linear-gradient(135deg,#ef5350,#b71c1c)', light:'#FFEBEE', text:'#b71c1c' },
+};
+
+const ROLE_EMOJIS = { police:'🚔', dcs:'🏛️', judiciary:'⚖️', nccs:'📊', admin:'⚙️' };
+
+function buildLoginCards(){
+  const container = document.getElementById('roleCards');
+  if(!container) return;
+  // Exclude admin from login gate — admin accessible within the app via Switch Role
+  container.innerHTML = Object.entries(ROLES)
+    .filter(([key]) => key !== 'admin')
+    .map(([key, r]) => {
+    const col = ROLE_COLORS[key] || { bg:'#ccc', light:'#f0f0f0', text:'#666' };
+    return `
+    <div class="role-card" id="rc-${key}" onclick="selectRole('${key}')">
+      <div class="role-card-av" style="background:${col.bg};color:#fff">
+        ${r.ini}
+      </div>
+      <div class="role-card-info">
+        <div class="role-card-name">${ROLE_EMOJIS[key]||'👤'} ${r.name}</div>
+        <div class="role-card-role">${r.agency}</div>
+        <div class="role-card-perms">
+          ${r.permTags.map(p=>`<span class="perm-tag ${p.c}">${p.t}</span>`).join('')}
+        </div>
+      </div>
+      <span class="role-card-badge" style="background:${col.light};color:${col.text}">${r.label}</span>
+    </div>
+  `}).join('');
+}
+
+function openRolePicker(){
+  const modal = document.getElementById('rolePickerModal');
+  modal.classList.add('open');
+  buildLoginCards();
+  selectedRole = null;
+  const btn = document.getElementById('loginBtn');
+  if(btn){ btn.disabled = true; document.getElementById('loginBtnTxt').textContent='Select an Agency to Continue'; }
+  const iconEl = document.getElementById('loginBtnIcon');
+  if(iconEl) iconEl.textContent = '👤';
+}
+
+function closeRolePicker(){
+  document.getElementById('rolePickerModal').classList.remove('open');
+}
+
+function selectRole(key){
+  selectedRole = key;
+  document.querySelectorAll('.role-card').forEach(c=>{
+    c.classList.remove('selected');
+    c.style.background='';c.style.borderColor='';c.style.boxShadow='';
+  });
+  const card = document.getElementById('rc-'+key);
+  const col = ROLE_COLORS[key]||{bg:'#ccc',light:'#f0f0f0',text:'#666'};
+  if(card){
+    card.classList.add('selected');
+    card.style.background = col.light;
+    card.style.borderColor = col.text;
+    card.style.boxShadow = `0 8px 28px ${col.text}30`;
+  }
+  const btn = document.getElementById('loginBtn');
+  if(btn){ btn.disabled = false; }
+  const emoji = ROLE_EMOJIS[key]||'👤';
+  const iconEl = document.getElementById('loginBtnIcon');
+  if(iconEl) iconEl.textContent = emoji;
+  const txtEl = document.getElementById('loginBtnTxt');
+  if(txtEl) txtEl.textContent = `Sign in as ${ROLES[key].name}`;
+}
+
+/* ── Profile Dropdown ── */
+function toggleProfileDropdown(){
+  const dd = document.getElementById('profileDropdown');
+  const chip = document.getElementById('userChip');
+  const isOpen = dd.classList.contains('on');
+  if(isOpen){ closeProfileDropdown(); }
+  else { dd.classList.add('on'); chip.classList.add('open'); }
+}
+function closeProfileDropdown(){
+  document.getElementById('profileDropdown').classList.remove('on');
+  document.getElementById('userChip').classList.remove('open');
+}
+document.addEventListener('click', e=>{
+  const chip = document.getElementById('userChip');
+  if(chip && !chip.contains(e.target)) closeProfileDropdown();
+});
+
+function updateProfileDropdown(){
+  if(!S.role) return;
+  const r = ROLES[S.role];
+  const col = ROLE_COLORS[S.role]||{bg:'#ccc'};
+  // Header
+  const pdAv = document.getElementById('pdAv');
+  if(pdAv){ pdAv.textContent=r.ini; pdAv.style.background=col.bg; pdAv.style.color='#fff'; }
+  const pdName=document.getElementById('pdName'); if(pdName)pdName.textContent=r.name;
+  const pdRole=document.getElementById('pdRole'); if(pdRole)pdRole.textContent=r.label+' — '+r.agency;
+  // Admin badge in profile
+  const pdAdminBadge=document.getElementById('pdAdminBadge');
+  if(pdAdminBadge)pdAdminBadge.style.display=r.canViewAdmin?'block':'none';
+  // Admin console entry
+  const pdAdmin=document.getElementById('pdAdminBtn');
+  if(pdAdmin)pdAdmin.style.display=r.canViewAdmin?'flex':'none';
+  // Audit
+  const pdAudit=document.getElementById('pdAuditBtn');
+  if(pdAudit)pdAudit.style.display=r.canViewAudit?'flex':'none';
+  // Theme icon: show sun when dark (to switch to light), moon when light (to switch to dark)
+  const ico=document.getElementById('pdThemeIco');
+  if(ico)ico.className=`fa-solid ${S.theme==='dark'?'fa-sun':'fa-moon'}`;
+}
+
+function goTabFromDropdown(t){
+  closeProfileDropdown();
+  goTab(t);
+}
+function toggleThemeFromDropdown(){
+  toggleTheme();
+  // icon already synced inside toggleTheme()
+}
+
+/* ── Switch Role Modal ── */
+let switchSelectedRole = null;
+
+function openSwitchRole(){
+  closeProfileDropdown();
+  switchSelectedRole = null;
+  // Build cards
+  const container = document.getElementById('switchRoleCards');
+  container.innerHTML = Object.entries(ROLES).map(([key, r]) => {
+    const col = ROLE_COLORS[key]||{bg:'#ccc',light:'#f0f0f0',text:'#666'};
+    const isCurrent = key === S.role;
+    return `
+    <div class="role-card ${isCurrent?'selected':''}" id="src-${key}" onclick="selectSwitchRole('${key}')"
+         style="${isCurrent?`background:${col.light};border-color:${col.text}`:''};${isCurrent?'opacity:.6;pointer-events:none':''}" >
+      <div class="role-card-av" style="background:${col.bg};color:#fff">${r.ini}</div>
+      <div class="role-card-info">
+        <div class="role-card-name">${ROLE_EMOJIS[key]||'👤'} ${r.name} ${isCurrent?'(Current)':''}</div>
+        <div class="role-card-role">${r.agency}</div>
+      </div>
+      <span class="role-card-badge" style="background:${col.light};color:${col.text}">${r.label}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('switchRoleBtn').disabled = true;
+  document.getElementById('switchRoleBtnTxt').textContent = 'Select a Role to Continue';
+  document.getElementById('switchRoleModal').classList.add('on');
+}
+
+function selectSwitchRole(key){
+  if(key===S.role) return;
+  switchSelectedRole = key;
+  document.querySelectorAll('#switchRoleCards .role-card').forEach(c=>{
+    c.classList.remove('selected');c.style.background='';c.style.borderColor='';c.style.boxShadow='';
+  });
+  const card=document.getElementById('src-'+key);
+  const col=ROLE_COLORS[key]||{bg:'#ccc',light:'#f0f0f0',text:'#666'};
+  if(card){card.classList.add('selected');card.style.background=col.light;card.style.borderColor=col.text;card.style.boxShadow=`0 6px 20px ${col.text}25`;}
+  const btn=document.getElementById('switchRoleBtn');btn.disabled=false;
+  document.getElementById('switchRoleBtnTxt').textContent=`Switch to ${ROLES[key].name}`;
+}
+
+function doSwitchRole(){
+  if(!switchSelectedRole) return;
+  const oldRole=S.role;
+  S.role=switchSelectedRole;
+  const r=ROLES[S.role];
+  logA(`Role switched: ${ROLES[oldRole].label} → ${r.label} (${r.name})`,'Auth','warn');
+  // Update header chip
+  document.getElementById('ucAv').textContent=r.ini;
+  document.getElementById('ucAv').style.background=ROLE_COLORS[S.role]?.bg||r.col+'22';
+  document.getElementById('ucAv').style.color='#fff';
+  document.getElementById('ucName').textContent=r.name;
+  document.getElementById('ucRole').textContent=r.label+' · '+r.agency;
+  document.getElementById('dNm').textContent=r.name.split(' ')[0];
+  // Re-apply role UI
+  applyRoleUI();renderAll();updateAlertPermUI();updateProfileDropdown();
+  closeSwitchRole();
+  // Navigate admin if switched to admin
+  if(r.canViewAdmin) goTab('admin');
+  else goTab('dashboard');
+  toast('s',`Switched to ${r.label}`,`Now logged in as ${r.name}`);
+}
+
+function closeSwitchRole(){
+  document.getElementById('switchRoleModal').classList.remove('on');
+  switchSelectedRole=null;
+}
+
+function doLogin(){
+  if(!selectedRole) return;
+  const r = ROLES[selectedRole];
+  S.role = selectedRole;
+
+  // Close role picker modal
+  closeRolePicker();
+
+  // Fade out login screen
+  const ls = document.getElementById('loginScreen');
+  ls.classList.add('out');
+  setTimeout(()=>{
+    ls.style.display='none';
+    // Show app shell as flex
+    const shell = document.getElementById('shell');
+    shell.style.display = 'flex';
+  }, 350);
+
+  // Set user chip
+  document.getElementById('ucAv').textContent = r.ini;
+  document.getElementById('ucAv').style.background = ROLE_COLORS[S.role]?.bg || r.col+'22';
+  document.getElementById('ucAv').style.color = '#fff';
+  document.getElementById('ucName').textContent = r.name;
+  document.getElementById('ucRole').textContent = r.label + ' · ' + r.agency;
+  document.getElementById('dNm').textContent = r.name.split(' ')[0];
+  document.getElementById('dDt').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · KCDB v3.1';
+  updateProfileDropdown();
+
+  // Apply role-based UI
+  applyRoleUI();
+  loadD(); if(!S.children.length) seed();
+  renderAll(); initCharts(); updateAlertPermUI();
+
+  // Chip filter listener
+  document.getElementById('catCh').addEventListener('click', e=>{
+    const c=e.target.closest('.chip'); if(!c)return;
+    document.querySelectorAll('#catCh .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); S.catF=c.dataset.c; renderCases();
+  });
+
+  // Responsive grid
+  const mq=window.matchMedia('(max-width:640px)');
+  const applyDG=m=>{ const dg=document.getElementById('dG'); if(dg)dg.style.gridTemplateColumns=m.matches?'1fr':'1fr 1fr'; };
+  applyDG(mq); mq.addEventListener('change',applyDG);
+
+  logA(`Session started — ${r.label} (${r.name}) | Device: ${/Mobi/i.test(navigator.userAgent)?'Mobile':'Desktop'}`, 'Auth', 'warn');
+  toast('s',`Signed in as ${r.name}`, `Role: ${r.label} · ${SESSION_ID}`);
+
+  // Start presence heartbeat
+  startPresenceHeartbeat();
+  initPortalBgCanvas();
+
+  // Staggered alerts
+  setTimeout(()=>addAlert('critical','Detention Review Required','Child detained 9 days without judicial review. S.229 Children Act timeline breached.','Nairobi Remand Home'),2500);
+  setTimeout(()=>addAlert('high','Unaccompanied Child — Border Alert','Unaccompanied minor at Namanga crossing. No prior KCDB record. DCS intervention required within 6 hours.','Kenya Immigration Service'),5500);
+  setTimeout(()=>addAlert('medium','Legal Aid Pending','Child in proceedings 14 days with no confirmed legal representation (S.96 Children Act).',"Nairobi Children's Court"),9000);
+}
+
+/* ══════════════════════════════════════════════
+   ROLE UI GATING
+══════════════════════════════════════════════ */
+function applyRoleUI(){
+  const r = ROLES[S.role];
+
+  // Register button visibility
+  const showReg = r.canRegister;
+  ['hdrRegBtn','dashRegBtn','casesRegBtn','nav-register','bn-register'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('hidden', !showReg);
+  });
+
+  // Audit nav visibility
+  ['nav-audit'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('hidden', !r.canViewAudit);
+  });
+
+  // Admin nav visibility
+  const navAdmin = document.getElementById('nav-admin');
+  if(navAdmin) navAdmin.style.display = r.canViewAdmin ? 'flex' : 'none';
+
+  // Build register section
+  buildRegisterSection();
+
+  // Build audit section
+  buildAuditSection();
+
+  // Build dashboard stats
+  buildDashStats();
+
+  // Build case table columns
+  buildCaseTableHeader();
+
+  // Cases subtitle
+  const cs = document.getElementById('casesSubtitle');
+  if(cs){
+    if(r.visibleCategories.length===0) cs.textContent = 'You have read-only aggregate access. Individual case records are not available for your role.';
+    else if(!r.canViewFullCases) cs.textContent = `Showing Category ${r.visibleCategories.join('/')} cases for your agency`;
+    else cs.textContent = 'Select any row to view full record and audit trail';
+  }
+
+  // Chip filter — hide irrelevant categories
+  const chips = document.querySelectorAll('#catCh .chip[data-c]');
+  chips.forEach(chip=>{
+    const cat = chip.dataset.c;
+    if(cat==='all') return;
+    const visible = r.visibleCategories.length===0 || r.visibleCategories.includes(cat);
+    chip.style.display = visible?'':'none';
+  });
+}
+
+function buildRegisterSection(){
+  const r = ROLES[S.role];
+  const container = document.getElementById('registerContent');
+  if(!r.canRegister){
+    container.innerHTML = `
+      <div class="access-denied">
+        <div class="access-denied-icon"><i class="fa-solid fa-lock"></i></div>
+        <h2>Registration Restricted</h2>
+        <p>Your role (<strong>${r.label}</strong>) does not have permission to register new children or generate UCIDs. Registration is available to Police, DCS, Judiciary, Health, and Immigration officers only.</p>
+        <div class="access-denied-role"><i class="fa-solid fa-user-shield" style="margin-right:6px"></i>${r.label} · ${r.agency}</div>
+      </div>`;
+    return;
+  }
+
+  // Trigger options per role
+  const triggerOptions = {
+    police: ['Arrest / Apprehension by Police'],
+    dcs: ['Rescue from Trafficking Situation','Admission to Children\'s Institution','Complaint Filed with DCS','Health Facility — Child Abuse Referral','Unaccompanied Child at Border Point','Arrest / Apprehension by Police','Court Filing (Children\'s Court)'],
+    judiciary: ['Court Filing (Children\'s Court)'],
+    nccs: [],
+  };
+  const categoryOptions = {
+    police: ['<option value="A">A — In Conflict with the Law</option>'],
+    dcs: ['<option value="A">A — In Conflict with the Law</option>','<option value="B">B — In Contact with the Law</option>','<option value="C">C — Trafficked &amp; Exploited</option>','<option value="D">D — Unaccompanied / Separated</option>'],
+    judiciary: ['<option value="B">B — In Contact with the Law</option>'],
+    nccs: [],
+  };
+  const agencyDefault = {
+    police: 'Kenya Police Service',
+    dcs: 'Dept. of Children Services',
+    judiciary: "Judiciary — Children's Court",
+    nccs: '',
+  };
+
+  container.innerHTML = `
+  <div class="rl_">
+    <div class="card">
+      <form id="regF" onsubmit="registerChild(event)" novalidate>
+        <div class="fgg">
+          <div class="fg">
+            <label>Triggering Event <span class="req">*</span></label>
+            <select class="fc" id="fTr" required>
+              <option value="">— Select event —</option>
+              ${(triggerOptions[S.role]||[]).map(t=>`<option>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fg">
+            <label>KCDB Category <span class="req">*</span></label>
+            <select class="fc" id="fCt" required>
+              <option value="">— Select category —</option>
+              ${(categoryOptions[S.role]||[]).join('')}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Registering Agency <span class="req">*</span></label>
+            <select class="fc" id="fAg" required>
+              <option value="">— Select agency —</option>
+              <option ${agencyDefault[S.role]==='Kenya Police Service'?'selected':''}>Kenya Police Service</option>
+              <option ${agencyDefault[S.role]==='Dept. of Children Services'?'selected':''}>Dept. of Children Services</option>
+              <option ${agencyDefault[S.role]==="Judiciary — Children's Court"?'selected':''}>Judiciary — Children's Court</option>
+              <option>Kenya Immigration Service</option><option>Ministry of Health</option>
+              <option>NCCS</option><option>Registered NGO</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Estimated Age Range <span class="req">*</span></label>
+            <select class="fc" id="fAg2" required>
+              <option value="">— Select range —</option>
+              <option>0–4 years</option><option>5–9 years</option>
+              <option>10–12 years</option><option>13–15 years</option><option>16–17 years</option>
+            </select>
+            <span class="field-hint">No exact date of birth. Pseudonymisation requirement — DPA 2019.</span>
+          </div>
+          <div class="fg">
+            <label>County / Region <span class="req">*</span></label>
+            <select class="fc" id="fCo" required>
+              <option value="">— Select county —</option>
+              <option>Nairobi</option><option>Mombasa</option><option>Kisumu</option>
+              <option>Nakuru</option><option>Eldoret / Uasin Gishu</option><option>Kilifi</option>
+              <option>Kwale</option><option>Garissa</option><option>Machakos</option>
+              <option>Kiambu</option><option>Kakamega</option><option>Nyeri</option><option>Other</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Immediate Status <span class="req">*</span></label>
+            <select class="fc" id="fSt" required>
+              <option value="">— Select status —</option>
+              <option>Registered</option><option>In Care</option><option>In Court</option><option>Detained</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Legal Aid (S.96 Children Act) <span class="req">*</span></label>
+            <select class="fc" id="fLe" required>
+              <option value="">— Select —</option>
+              <option value="Yes">Yes — Confirmed</option>
+              <option value="No">No — Not required</option>
+              <option value="Pending">Pending Assessment</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Current Placement <span class="req">*</span></label>
+            <input type="text" class="fc" id="fPl" placeholder="e.g. Kisumu Remand Home, UNHCR Transit Centre…" required minlength="3">
+            <span class="field-hint">Do not include child's name in placement description.</span>
+          </div>
+          <div class="fg fgf">
+            <label>Case Circumstances <span class="req">*</span></label>
+            <textarea class="fc" id="fNo" required minlength="20"
+              placeholder="Describe anonymously. Do NOT include real names or tribal identifiers."></textarea>
+            <span class="field-hint">Minimum 20 characters. This record is immutable and audited.</span>
+          </div>
+          <div class="fg">
+            <label>Registering Officer Service No. <span class="req">*</span></label>
+            <input type="text" class="fc" id="fOff" placeholder="e.g. KPS/2024/001423" required pattern="[A-Za-z0-9\\/\\-]+" minlength="6">
+          </div>
+          <div class="fg">
+            <label>Supervisor / Countersignature <span class="req">*</span></label>
+            <input type="text" class="fc" id="fSup" placeholder="Senior officer or supervisor ID" required minlength="4">
+          </div>
+        </div>
+
+        <div class="ur" id="ucidR">
+          <div class="url">UCID Successfully Generated</div>
+          <div class="urv" id="ucidV"></div>
+          <button type="button" class="urc" onclick="copyUCID()"><i class="fa-regular fa-copy"></i> Copy UCID</button>
+        </div>
+
+        <button type="submit" class="bsub">
+          <i class="fa-solid fa-fingerprint"></i> Generate UCID &amp; Register Child
+        </button>
+        <div id="formErr" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(224,85,112,.1);border:1px solid rgba(224,85,112,.3);border-radius:8px;font-size:11.5px;color:var(--rose)"></div>
+      </form>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:600;margin-bottom:12px">Category Guide</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:9px;align-items:flex-start"><span class="bdg bA" style="margin-top:2px;flex-shrink:0">A</span><p style="font-size:11.5px;color:var(--text2);line-height:1.5">Children in <strong>conflict</strong> — arrest, remand, conviction, diversion</p></div>
+          <div style="display:flex;gap:9px;align-items:flex-start"><span class="bdg bB" style="margin-top:2px;flex-shrink:0">B</span><p style="font-size:11.5px;color:var(--text2);line-height:1.5">Children in <strong>contact</strong> — victim, witness, custody, care proceedings</p></div>
+          <div style="display:flex;gap:9px;align-items:flex-start"><span class="bdg bC" style="margin-top:2px;flex-shrink:0">C</span><p style="font-size:11.5px;color:var(--text2);line-height:1.5"><strong>Trafficked / exploited</strong> — FGM, forced labour, sexual exploitation</p></div>
+          <div style="display:flex;gap:9px;align-items:flex-start"><span class="bdg bD" style="margin-top:2px;flex-shrink:0">D</span><p style="font-size:11.5px;color:var(--text2);line-height:1.5"><strong>Unaccompanied</strong> — border, asylum, refugee, no known guardian</p></div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--teal4);border-color:var(--border3)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--teal);margin-bottom:8px">🔐 Data Protection</div>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.6">UCID contains <strong>zero personally identifiable data</strong>. Compliant with DPA 2019 &amp; Art. 31, Constitution of Kenya.</p>
+      </div>
+      <div class="card" style="background:rgba(224,85,112,.04);border-color:rgba(224,85,112,.2)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rose);margin-bottom:8px"><i class="fa-solid fa-lock" style="margin-right:4px"></i>Mandatory Registration</div>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.6">Failure to register within <strong>24 hours</strong> of a triggering event is a criminal offence. Penalty: KES 200,000 or 2 years imprisonment.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildAuditSection(){
+  const r = ROLES[S.role];
+  const container = document.getElementById('auditContent');
+  if(!r.canViewAudit){
+    container.innerHTML = `
+      <div class="access-denied">
+        <div class="access-denied-icon"><i class="fa-solid fa-file-shield"></i></div>
+        <h2>Audit Log Restricted</h2>
+        <p>The immutable audit log is accessible only to DCS and Judiciary officers. Your role (<strong>${r.label}</strong>) does not have access to audit trail data. All your actions are still recorded.</p>
+        <div class="access-denied-role"><i class="fa-solid fa-user-shield" style="margin-right:6px"></i>${r.label} · ${r.agency}</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:16px;padding:14px 16px">
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--teal)" id="auTot">0</div><div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Total Entries</div></div>
+        <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--rose)" id="auCrit">0</div><div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Critical Events</div></div>
+        <div style="text-align:center"><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)" id="auWarn">0</div><div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Warnings</div></div>
+        <div style="text-align:center;margin-left:auto"><div style="font-size:10px;color:var(--text3);margin-bottom:3px">Session ID</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)" id="sessId">${SESSION_ID}</div></div>
+      </div>
+    </div>
+    <div class="tw_">
+      <div class="audit-filters">
+        <div class="sb"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search entries, users, actions…" oninput="filterAudit(this.value)"></div>
+        <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auRl" onchange="renderAudit()">
+          <option value="">All Roles</option><option>POLICE</option><option>DCS</option><option>JUDICIARY</option><option>NCCS</option><option>SYSTEM</option>
+        </select>
+        <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auTyp" onchange="renderAudit()">
+          <option value="">All Action Types</option>
+          <option value="Registration">Registration</option><option value="View">View</option>
+          <option value="Edit">Edit / Update</option><option value="Auth">Auth / Login</option>
+          <option value="Alert">Alert Action</option><option value="System">System</option>
+          <option value="Data Minimisation">Discharge</option>
+        </select>
+        <select class="fc" style="width:auto;padding:7px 30px 7px 11px;font-size:11px" id="auSev" onchange="renderAudit()">
+          <option value="">All Severity</option><option value="info">Info</option>
+          <option value="warn">Warning</option><option value="crit">Critical</option>
+        </select>
+      </div>
+      <div class="audit-wrap">
+        <table class="audit-table">
+          <thead><tr><th>Timestamp</th><th>Sev.</th><th>Type</th><th>Role</th><th>Officer</th><th>Session ID</th><th>Sim. IP</th><th>Action / Description</th></tr></thead>
+          <tbody id="auBd"></tbody>
+        </table>
+      </div>
+      <div id="auEmpty" style="display:none" class="empty"><i class="fa-solid fa-list-check"></i><p>No audit entries match your filters.</p></div>
+    </div>`;
+}
+
+function buildDashStats(){
+  const r = ROLES[S.role];
+  const grid = document.getElementById('statsGrid');
+  const statsMap = {
+    activeCases: `<div class="sc tl"><div class="sc-l">Active Cases</div><div class="sc-v tl" id="sAc">0</div><div class="sc-m"><span class="tr_ tu">↑ All time</span></div><i class="fa-solid fa-folder-open sc-ic"></i></div>`,
+    todayReg: `<div class="sc gd"><div class="sc-l">Registered Today</div><div class="sc-v gd" id="sTd">0</div><div class="sc-m"><span class="tr_ tu">↑ Today</span></div><i class="fa-solid fa-user-plus sc-ic"></i></div>`,
+    pendingAlerts: `<div class="sc rs"><div class="sc-l">Pending Alerts</div><div class="sc-v rs" id="sAl">0</div><div class="sc-m"><span class="tr_ tw_" id="sAlT">Review needed</span></div><i class="fa-solid fa-bell sc-ic"></i></div>`,
+    discharged: `<div class="sc sk"><div class="sc-l">Discharged</div><div class="sc-v sk" id="sDi">0</div><div class="sc-m"><span class="tr_ tu">Anonymised</span></div><i class="fa-solid fa-circle-check sc-ic"></i></div>`,
+    detained: `<div class="sc rs"><div class="sc-l">Detained</div><div class="sc-v rs" id="sDetV">0</div><div class="sc-m"><span class="tr_ tw_">Require review</span></div><i class="fa-solid fa-building sc-ic"></i></div>`,
+    inCourt: `<div class="sc go"><div class="sc-l">In Court</div><div class="sc-v go" id="sCrtV">0</div><div class="sc-m"><span class="tr_ tu">Active proceedings</span></div><i class="fa-solid fa-gavel sc-ic"></i></div>`,
+    legalAidPending: `<div class="sc sk"><div class="sc-l">Legal Aid Pending</div><div class="sc-v sk" id="sLapV">0</div><div class="sc-m"><span class="tr_ tw_">Require assignment</span></div><i class="fa-solid fa-scale-balanced sc-ic"></i></div>`,
+  };
+  grid.innerHTML = r.dashboardStats.map(k=>statsMap[k]||'').join('');
+}
+
+function buildCaseTableHeader(){
+  const r = ROLES[S.role];
+  const thead = document.getElementById('casesThead');
+  if(!thead) return;
+  if(r.visibleCategories.length===0){
+    thead.innerHTML = '';
+    return;
+  }
+  const cols = r.caseColumns;
+  thead.innerHTML = cols.map(c=>`<th>${c}</th>`).join('') + '<th></th>';
+}
+
+/* ══════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════ */
+function toggleTheme(){
+  S.theme = S.theme==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', S.theme);
+  const ico = S.theme==='dark'?'fa-moon':'fa-sun';
+  // App header theme button
+  const tb = document.getElementById('themeBtn');
+  if(tb) tb.innerHTML = `<i class="fa-solid ${ico}"></i>`;
+  // Login screen theme icon
+  const li = document.getElementById('loginThemeIco');
+  if(li) li.className = `fa-solid ${ico}`;
+  // Profile dropdown icon sync
+  const pdIco = document.getElementById('pdThemeIco');
+  if(pdIco) pdIco.className = `fa-solid ${S.theme==='dark'?'fa-sun':'fa-moon'}`;
+  document.getElementById('themeColorMeta').content = S.theme==='dark'?'#080f1e':'#f5f7fa';
+  if(S.role) logA('Theme switched to '+S.theme+' mode','System','info');
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+function goTab(t){
+  const r = ROLES[S.role];
+
+  // Block restricted tabs
+  if(t==='register' && !r.canRegister){ toast('e','Access Denied','Your role cannot register new children.'); return; }
+  if(t==='audit' && !r.canViewAudit){ toast('e','Access Denied','Audit log is restricted to DCS and Judiciary.'); return; }
+  if(t==='admin' && !r.canViewAdmin){ toast('e','Access Denied','Admin console is restricted to system administrators.'); return; }
+  if(t==='cases' && r.visibleCategories.length===0){
+    // Show but with no-access message
+  }
+
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('[data-t]').forEach(n=>n.classList.remove('on'));
+  const tab=document.getElementById('tab-'+t);
+  if(tab) tab.classList.add('on');
+  document.querySelectorAll('[data-t="'+t+'"]').forEach(n=>n.classList.add('on'));
+  renderAll();
+  if(t==='analytics') setTimeout(initAnalyticsCharts,80);
+  if(t==='audit') updateAuditStats();
+  if(t==='admin') setTimeout(renderAdminPanel,80);
+  window.scrollTo({top:0,behavior:'smooth'});
+  updateAlertPermUI();
+}
+
+/* ══════════════════════════════════════════════
+   MODAL — role-scoped
+══════════════════════════════════════════════ */
+function openModal(ucid){
+  const r = ROLES[S.role];
+  if(r.visibleCategories.length===0){ toast('e','Access Denied','Individual case records are not accessible for your role.'); return; }
+  const c=S.children.find(x=>x.ucid===ucid); if(!c) return;
+  // Check category visibility
+  if(r.visibleCategories.length && !r.visibleCategories.includes(c.category)){
+    toast('e','Access Restricted',`Your role can only view Category ${r.visibleCategories.join('/')} cases.`); return;
+  }
+  S.activeModal=ucid;
+  document.getElementById('mUC').textContent=ucid;
+  document.getElementById('mCa').innerHTML=`<span class="bdg b${c.category}">Category ${c.category}</span>`;
+  document.getElementById('mTr').textContent=c.trigger;
+  document.getElementById('mCo').textContent=c.county||'—';
+  document.getElementById('mLe').textContent=c.legalAid||'—';
+  document.getElementById('mAge').textContent=c.age||'—';
+  document.getElementById('mAg').textContent=c.agency||'—';
+
+  // Edit section
+  const editSec = document.getElementById('modalEditSection');
+  if(editSec){
+    editSec.style.display = r.modalEdit ? 'block' : 'none';
+    if(r.modalEdit){
+      document.getElementById('mSt').value=c.status;
+      document.getElementById('mPl').value=c.placement;
+      document.getElementById('mNo').value=c.notes;
+      // Hide discharge for judiciary
+      const actionsDiv = document.getElementById('modalActions');
+      if(actionsDiv){
+        const dischargeBtn = actionsDiv.querySelector('.bdng');
+        if(dischargeBtn) dischargeBtn.style.display = r.canDischarge?'':'none';
+        // If no discharge, make save full-width
+        if(!r.canDischarge) actionsDiv.style.gridTemplateColumns='1fr';
+      }
+    }
+  }
+
+  document.getElementById('mTl').innerHTML=c.audit.map(a=>`
+    <div class="tli">
+      <div class="tld"></div>
+      <div>
+        <div class="tlt">${a.time} · <span style="color:var(--text2);font-weight:600">${a.user||a.role}</span>${a.session?' · <span style="color:var(--text4)">'+a.session+'</span>':''}</div>
+        <div class="tla">${a.action}</div>
+      </div>
+    </div>`).join('')||'<p style="font-size:11px;color:var(--text3)">No audit trail yet.</p>';
+  document.getElementById('modal').classList.add('on');
+  logA(`Viewed record ${ucid.substring(0,28)}…`,'View','info');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('on'); S.activeModal=null; }
+
+/* ══════════════════════════════════════════════
+   ALERT PERMISSIONS
+══════════════════════════════════════════════ */
+function updateAlertPermUI(){
+  if(!S.role) return;
+  const r = ROLES[S.role];
+  const canDismiss = r.canDismiss;
+  const note=document.getElementById('alertPermNote');
+  if(note){ note.style.display=canDismiss?'none':'flex'; const rl=document.getElementById('roleLbl'); if(rl)rl.textContent=r.label; }
+  const daw=document.getElementById('dismissAllWrap');
+  if(daw){
+    daw.innerHTML=canDismiss
+      ? `<button class="bsec" style="width:auto;padding:8px 14px;font-size:11px" onclick="dismissAll()"><i class="fa-solid fa-check-double"></i> Dismiss All</button>`
+      : `<div class="auth-lock"><i class="fa-solid fa-lock"></i> Dismiss restricted to DCS &amp; Judiciary</div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   REGISTER CHILD
+══════════════════════════════════════════════ */
+function registerChild(e){
+  e.preventDefault();
+  const g=id=>document.getElementById(id);
+  const err=g('formErr'); if(!err) return;
+  err.style.display='none';
+  const required=[
+    {id:'fTr',label:'Triggering Event'},{id:'fCt',label:'KCDB Category'},
+    {id:'fAg',label:'Registering Agency'},{id:'fAg2',label:'Estimated Age Range'},
+    {id:'fCo',label:'County / Region'},{id:'fSt',label:'Immediate Status'},
+    {id:'fLe',label:'Legal Aid Status'},{id:'fPl',label:'Current Placement'},
+    {id:'fNo',label:'Case Circumstances'},{id:'fOff',label:'Registering Officer Service No.'},
+    {id:'fSup',label:'Supervisor / Countersignature'},
+  ];
+  const missing=required.filter(f=>!g(f.id)||!g(f.id).value.trim());
+  if(missing.length){ err.style.display='block'; err.innerHTML='<i class="fa-solid fa-circle-exclamation" style="margin-right:6px"></i><strong>Missing:</strong> '+missing.map(f=>f.label).join(', ')+'.'; g(missing[0].id)?.focus(); return; }
+  if(g('fNo').value.trim().length<20){ err.style.display='block'; err.textContent='Case Circumstances must be at least 20 characters.'; return; }
+  const v=id=>g(id).value.trim();
+  const ucid='KCDB-'+crypto.randomUUID();
+  const child={
+    ucid, category:v('fCt'), trigger:v('fTr'), agency:v('fAg'), age:v('fAg2'),
+    county:v('fCo'), status:v('fSt'), notes:v('fNo'), legalAid:v('fLe'),
+    placement:v('fPl'), registered:new Date().toISOString(),
+    officerId:v('fOff'), supervisor:v('fSup'),
+    registeredByRole: ROLES[S.role].label,
+    audit:[{
+      time:fmt(new Date().toISOString()), user:ROLES[S.role].name, role:ROLES[S.role].label,
+      action:`UCID generated by ${ROLES[S.role].label} (${ROLES[S.role].name}) — ${v('fTr')}`,
+      type:'Registration', sev:'warn', session:SESSION_ID, ip:simIP(S.role), officerId:v('fOff')
+    }]
+  };
+  S.children.unshift(child);
+  logA(`New UCID generated: ${ucid.substring(0,28)}…`,'Registration','warn');
+  saveD();
+  window._lu=ucid;
+  g('ucidV').textContent=ucid;
+  g('ucidR').classList.add('on');
+  toast('s','Child Registered Successfully','UCID: '+ucid.substring(0,26)+'…');
+  renderAll();
+  setTimeout(()=>{ g('ucidR').classList.remove('on'); g('regF').reset(); goTab('cases'); },5000);
+}
+function copyUCID(){ if(window._lu){ navigator.clipboard.writeText(window._lu).catch(()=>{}); toast('s','UCID Copied','Ready to paste into case file'); } }
+
+/* ══════════════════════════════════════════════
+   UPDATE / DISCHARGE
+══════════════════════════════════════════════ */
+function updateChild(){
+  const r=ROLES[S.role]; if(!r.canEdit){ toast('e','Access Denied','Your role cannot update case records.'); return; }
+  const c=S.children.find(x=>x.ucid===S.activeModal); if(!c)return;
+  const prevStatus=c.status;
+  c.status=document.getElementById('mSt').value;
+  c.placement=document.getElementById('mPl').value;
+  c.notes=document.getElementById('mNo').value;
+  c.audit.unshift({
+    time:fmt(new Date().toISOString()), user:ROLES[S.role].name, role:ROLES[S.role].label,
+    action:`Record updated by ${ROLES[S.role].label} (${ROLES[S.role].name}) — status: "${prevStatus}" → "${c.status}"`,
+    type:'Edit', sev:'warn', session:SESSION_ID, ip:simIP(S.role)
+  });
+  logA(`Updated ${S.activeModal.substring(0,28)}… — status: ${c.status}`,'Edit','warn');
+  saveD(); renderAll(); closeModal(); toast('s','Record Updated','Status: '+c.status);
+}
+function dischargeChild(){
+  const r=ROLES[S.role]; if(!r.canDischarge){ toast('e','Access Denied','Only DCS may discharge and anonymise records.'); return; }
+  if(!confirm('⚠️ This will permanently anonymise all personal data (Data Minimisation — S.25 DPA 2019).\n\nThis action is irreversible. Continue?')) return;
+  const c=S.children.find(x=>x.ucid===S.activeModal); if(!c)return;
+  c.status='Discharged & Anonymised';
+  c.notes='[DATA MINIMISED — aggregate statistics only. No identifying information retained. Compliant with S.25 DPA 2019]';
+  c.placement='[ANONYMISED]'; c.age='[ANONYMISED]'; c.county='[ANONYMISED]';
+  c.audit.unshift({
+    time:fmt(new Date().toISOString()), user:ROLES[S.role].name, role:ROLES[S.role].label,
+    action:`DATA MINIMISATION applied by ${ROLES[S.role].label} (${ROLES[S.role].name}) — all identifying data permanently anonymised.`,
+    type:'Data Minimisation', sev:'crit', session:SESSION_ID, ip:simIP(S.role)
+  });
+  logA(`Discharged & anonymised ${S.activeModal.substring(0,28)}…`,'Data Minimisation','crit');
+  saveD(); renderAll(); closeModal(); toast('s','Discharged & Anonymised','All identifying data permanently erased');
+}
+
+/* ══════════════════════════════════════════════
+   ALERTS
+══════════════════════════════════════════════ */
+function addAlert(lv,ti,de,so){
+  S.alerts.unshift({id:Date.now(),lv,ti,de,so,time:fmt(new Date().toISOString())});
+  logA(`Alert generated: ${ti} (${lv}) — ${so}`,'Alert',lv==='critical'?'crit':'warn');
+  renderAlerts(); updateBadges(); renderDashAlerts();
+}
+function dimAlert(id){
+  if(!ROLES[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may dismiss alerts'); return; }
+  const a=S.alerts.find(x=>x.id===id);
+  if(a) logA(`Alert DISMISSED: "${a.ti}" — by ${ROLES[S.role].label} (${ROLES[S.role].name})`,'Alert','warn');
+  S.alerts=S.alerts.filter(a=>a.id!==id);
+  renderAlerts(); updateBadges(); renderDashAlerts();
+}
+function resolveAlert(id){
+  if(!ROLES[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may resolve alerts'); return; }
+  const a=S.alerts.find(x=>x.id===id);
+  if(a) logA(`Alert RESOLVED: "${a.ti}" — by ${ROLES[S.role].label} (${ROLES[S.role].name})`,'Alert','warn');
+  dimAlert(id); toast('s','Alert Resolved','Resolution recorded in audit log');
+}
+function dismissAll(){
+  if(!ROLES[S.role].canDismiss){ toast('e','Permission Denied','Only DCS and Judiciary may dismiss alerts'); return; }
+  logA(`ALL ALERTS dismissed by ${ROLES[S.role].label} (${ROLES[S.role].name}) — ${S.alerts.length} cleared`,'Alert','crit');
+  S.alerts=[]; renderAlerts(); updateBadges(); renderDashAlerts(); toast('s','All Alerts Cleared','Dismissal recorded');
+}
+
+/* ══════════════════════════════════════════════
+   AUDIT LOG
+══════════════════════════════════════════════ */
+function logA(msg,type='Action',sev='info'){
+  S.audit.unshift({
+    time:fmt(new Date().toISOString()), user:S.role?ROLES[S.role].name:'SYSTEM',
+    role:S.role?ROLES[S.role].label:'SYSTEM',
+    msg, type, sev, session:SESSION_ID,
+    ip:simIP(S.role||'dcs'), device:/Mobi|Android/i.test(navigator.userAgent)?'Mobile':'Desktop'
+  });
+  if(S.audit.length>300) S.audit.pop();
+  saveD();
+}
+const RC={'POLICE':'rPO','DCS':'rDC','JUDICIARY':'rJU','NCCS':'rNC','SYSTEM':'rSY'};
+function renderAudit(v){
+  const tbody=document.getElementById('auBd'); if(!tbody) return;
+  const empty=document.getElementById('auEmpty');
+  const rl=(document.getElementById('auRl')?.value||'').toLowerCase();
+  const typ=(document.getElementById('auTyp')?.value||'').toLowerCase();
+  const sev=(document.getElementById('auSev')?.value||'').toLowerCase();
+  const search=(typeof v==='string'?v:'').toLowerCase();
+  let fl=S.audit;
+  if(rl) fl=fl.filter(e=>(e.role||'').toLowerCase()===rl);
+  if(typ) fl=fl.filter(e=>(e.type||'').toLowerCase().includes(typ));
+  if(sev) fl=fl.filter(e=>(e.sev||'')==sev);
+  if(search) fl=fl.filter(e=>Object.values(e).some(v=>String(v).toLowerCase().includes(search)));
+  if(empty) empty.style.display=fl.length?'none':'block';
+  const typCls={'Registration':'typ-reg','View':'typ-view','Edit':'typ-edit','Auth':'typ-auth','Alert':'typ-alert','System':'typ-sys','Data Minimisation':'typ-alert'};
+  tbody.innerHTML=fl.slice(0,100).map(e=>`
+    <tr>
+      <td class="at-time">${e.time}</td>
+      <td><span class="at-sev sev-${e.sev||'info'}"></span></td>
+      <td><span class="at-type ${typCls[e.type]||'typ-sys'}">${e.type||'—'}</span></td>
+      <td><span class="auR ${RC[e.role]||'rSY'}">${e.role||'SYS'}</span></td>
+      <td style="color:var(--text)">${e.user||'—'}</td>
+      <td class="at-session">${e.session||'—'}</td>
+      <td class="at-ip">${e.ip||'—'}</td>
+      <td style="color:var(--text2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.msg||''}">${e.msg||'—'}</td>
+    </tr>`).join('');
+}
+function filterAudit(v){ renderAudit(v.toLowerCase()); }
+function updateAuditStats(){
+  const tot=document.getElementById('auTot'); if(tot) tot.textContent=S.audit.length;
+  const crit=document.getElementById('auCrit'); if(crit) crit.textContent=S.audit.filter(e=>e.sev==='crit').length;
+  const warn=document.getElementById('auWarn'); if(warn) warn.textContent=S.audit.filter(e=>e.sev==='warn').length;
+}
+function exportAudit(){
+  const rows=[['Timestamp','Type','Severity','Role','Officer','Session ID','IP','Action'],...S.audit.map(e=>[e.time,e.type||'',e.sev||'',e.role||'',e.user||'',e.session||'',e.ip||'',e.msg||''])];
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='KCDB_AuditLog_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  toast('s','Audit Log Exported','CSV downloaded');
+}
+
+/* ══════════════════════════════════════════════
+   RENDER HELPERS
+══════════════════════════════════════════════ */
+function renderAll(){ updateStats(); updateBadges(); renderRecent(); renderCases(); renderAlerts(); renderDashAlerts(); renderAudit(); updateAnStats(); updateCharts(); updateAuditStats(); }
+
+function updateStats(){
+  const act=S.children.filter(c=>!c.status.includes('Discharged'));
+  const tod=S.children.filter(c=>new Date(c.registered).toDateString()===new Date().toDateString());
+  const dis=S.children.filter(c=>c.status.includes('Discharged'));
+  const isJudiciary = S.role === 'judiciary';
+  const visibleAlerts = isJudiciary ? S.alerts.filter(a=>a.type!=='missingChild') : S.alerts;
+  const g=id=>document.getElementById(id);
+  if(g('sAc'))g('sAc').textContent=act.length;
+  if(g('sTd'))g('sTd').textContent=tod.length;
+  if(g('sAl'))g('sAl').textContent=visibleAlerts.length;
+  if(g('sDi'))g('sDi').textContent=dis.length;
+  if(g('sAlT'))g('sAlT').textContent=visibleAlerts.length?`${visibleAlerts.length} require review`:'No pending alerts';
+  // Role-specific extra stats
+  if(g('sDetV'))g('sDetV').textContent=S.children.filter(c=>c.status==='Detained').length;
+  if(g('sCrtV'))g('sCrtV').textContent=S.children.filter(c=>c.status==='In Court').length;
+  if(g('sLapV'))g('sLapV').textContent=S.children.filter(c=>c.legalAid==='Pending').length;
+}
+
+function updateBadges(){
+  const isJudiciary = S.role === 'judiciary';
+  const visibleAlerts = isJudiciary ? S.alerts.filter(a=>a.type!=='missingChild') : S.alerts;
+  const n=visibleAlerts.length;
+  const sa=document.getElementById('sA'); if(sa)sa.textContent=n;
+  const sn=document.getElementById('sN'); if(sn)sn.textContent=S.children.filter(c=>!c.status.includes('Discharged')).length;
+  const hb=document.getElementById('hBdg'); if(hb){hb.textContent=n;hb.classList.toggle('on',n>0);}
+  const bd=document.getElementById('bnD'); if(bd)bd.classList.toggle('on',n>0);
+}
+
+function renderRecent(){
+  const r=ROLES[S.role]; if(!r) return;
+  const el=document.getElementById('recL'); if(!el)return;
+  // Filter to visible categories
+  let items=S.children;
+  if(r.visibleCategories.length) items=items.filter(c=>r.visibleCategories.includes(c.category));
+  items=items.slice(0,5);
+  if(!items.length){ el.innerHTML='<div class="empty" style="padding:16px 0"><i class="fa-solid fa-folder-open" style="font-size:26px;margin-bottom:9px"></i><p>No cases in your category</p></div>'; return; }
+  el.innerHTML=items.map(c=>`
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s" onclick="openModal('${c.ucid}')" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+      <span class="bdg b${c.category}">Cat. ${c.category}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--teal);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.ucid.substring(0,24)}…</span>
+      <span class="bdg ${scls(c.status)}">${c.status}</span>
+    </div>`).join('');
+}
+
+function renderDashAlerts(){
+  const el=document.getElementById('dAl'); if(!el)return;
+  const isJudiciary = S.role === 'judiciary';
+  const visible = isJudiciary ? S.alerts.filter(a=>a.type!=='missingChild') : S.alerts;
+  if(!visible.length){ el.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:12px 0;text-align:center">No active alerts — system nominal</div>'; return; }
+  el.innerHTML=visible.slice(0,3).map(a=>`
+    <div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:${a.type==='missingChild'?'var(--rose)':a.lv==='critical'?'var(--rose)':a.lv==='high'?'var(--gold)':'var(--sky)'}"></div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--text)">${a.ti}</div><div style="font-size:10.5px;color:var(--text3);margin-top:2px">${a.so}</div></div>
+    </div>`).join('');
+}
+
+function renderCases(){
+  const r=ROLES[S.role]; if(!r) return;
+
+  // NCCS: no case-level access
+  if(r.visibleCategories.length===0){
+    const tb=document.getElementById('cBd'); if(tb)tb.innerHTML='';
+    const mc=document.getElementById('cCs'); if(mc)mc.innerHTML='';
+    const em=document.getElementById('cEm');
+    if(em){ em.style.display='block'; em.querySelector('p').textContent='Individual case records are not available for your role. Please use the Analytics section for aggregate data.'; }
+    return;
+  }
+
+  const search=(document.getElementById('cSr')?.value||'').toLowerCase();
+  const sf=document.getElementById('stFil')?.value||'';
+  let fl=S.children;
+  // Role-based category filter
+  if(r.visibleCategories.length) fl=fl.filter(c=>r.visibleCategories.includes(c.category));
+  if(S.catF!=='all') fl=fl.filter(c=>c.category===S.catF);
+  if(sf) fl=fl.filter(c=>c.status===sf);
+  if(search) fl=fl.filter(c=>
+    c.ucid.toLowerCase().includes(search)||
+    (c.notes||'').toLowerCase().includes(search)||
+    (c.county||'').toLowerCase().includes(search)||
+    (c.trigger||'').toLowerCase().includes(search));
+
+  const em=document.getElementById('cEm'); if(em)em.style.display=fl.length?'none':'block';
+
+  // Build table rows based on visible columns
+  const cols=r.caseColumns;
+  const tb=document.getElementById('cBd');
+  if(tb) tb.innerHTML=fl.map(c=>{
+    const cellMap={
+      'UCID':`<td><span class="ut">${c.ucid.substring(0,26)}…</span></td>`,
+      'Category':`<td><span class="bdg b${c.category}">Cat. ${c.category}</span></td>`,
+      'Trigger Event':`<td style="color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.trigger}</td>`,
+      'County':`<td style="color:var(--text2)">${c.county||'—'}</td>`,
+      'Status':`<td><span class="bdg ${scls(c.status)}">${c.status}</span></td>`,
+      'Registering Agency':`<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3)">${c.agency}</td>`,
+      'Date Registered':`<td style="color:var(--text3)">${fmtS(c.registered)}</td>`,
+      'Legal Aid':`<td><span class="bdg ${c.legalAid==='Yes'?'sRein':c.legalAid==='Pending'?'sCourt':'sDis'}">${c.legalAid||'—'}</span></td>`,
+    };
+    return `<tr onclick="openModal('${c.ucid}')">${cols.map(col=>cellMap[col]||'<td>—</td>').join('')}<td><button class="bsec" style="padding:4px 12px;font-size:10.5px;width:auto" onclick="event.stopPropagation();openModal('${c.ucid}')">View</button></td></tr>`;
+  }).join('');
+
+  const mc=document.getElementById('cCs');
+  if(mc) mc.innerHTML=fl.map(c=>`
+    <div class="cc_" onclick="openModal('${c.ucid}')">
+      <div class="ccr"><span class="bdg b${c.category}">Cat. ${c.category}</span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--teal);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.ucid.substring(0,30)}…</span></div>
+      <div style="font-size:13px;color:var(--text);font-weight:500;margin-top:5px">${c.trigger}</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px">
+        <span class="bdg ${scls(c.status)}">${c.status}</span>
+        <span style="font-size:10.5px;color:var(--text3)">${c.county||'—'}</span>
+        <span style="font-size:10.5px;color:var(--text3)">· ${fmtS(c.registered)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderAlerts(){
+  const el=document.getElementById('alL'); if(!el)return;
+  const isJudiciary = S.role === 'judiciary';
+  // Judiciary cannot see missing child alerts
+  const visibleAlerts = isJudiciary ? S.alerts.filter(a=>a.type!=='missingChild') : S.alerts;
+  if(!visibleAlerts.length){ el.innerHTML='<div class="empty"><i class="fa-solid fa-bell-slash"></i><p>No active alerts. System nominal.</p></div>'; return; }
+  const canDismiss=ROLES[S.role].canDismiss;
+  el.innerHTML=visibleAlerts.map(a=>`
+    <div class="ali ${a.type==='missingChild'?'missing':a.lv}">
+      <div class="ali-ic ${a.type==='missingChild'?'missing':a.lv}"><i class="fa-solid ${a.type==='missingChild'?'fa-child-reaching':a.lv==='critical'?'fa-circle-exclamation':a.lv==='high'?'fa-triangle-exclamation':'fa-circle-info'}"></i></div>
+      <div class="ali-b">
+        <div class="ali-t">${a.ti}</div>
+        <div class="ali-d">${a.de}</div>
+        <div class="ali-m"><i class="fa-regular fa-clock" style="margin-right:3px"></i>${a.time} · ${a.so}</div>
+        <div class="ali-a">
+          ${canDismiss
+            ? `<button class="abtn ar" onclick="resolveAlert(${a.id})"><i class="fa-solid fa-check" style="margin-right:4px"></i>Resolve</button><button class="abtn ad" onclick="dimAlert(${a.id})">Dismiss</button>`
+            : `<div class="auth-lock"><i class="fa-solid fa-lock"></i> Dismissal restricted — DCS &amp; Judiciary only</div>`}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* Missing child alert functions */
+function openMissingChildModal(){
+  const modal=document.getElementById('missingChildModal');
+  modal.classList.add('open');
+  ['mcUcid','mcAge','mcCounty','mcDesc','mcOfficer'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const err=document.getElementById('mcErr');if(err)err.style.display='none';
+}
+function closeMissingChildModal(){
+  document.getElementById('missingChildModal').classList.remove('open');
+}
+function submitMissingChild(){
+  const g=id=>document.getElementById(id);
+  const err=g('mcErr'); if(err)err.style.display='none';
+  const age=g('mcAge')?.value, county=g('mcCounty')?.value, desc=g('mcDesc')?.value?.trim(), officer=g('mcOfficer')?.value?.trim();
+  const missing=[];
+  if(!age) missing.push('Age Range');
+  if(!county) missing.push('County / Area Last Seen');
+  if(!desc||desc.length<20) missing.push('Circumstances / Description (min 20 chars)');
+  if(!officer) missing.push('Reporting Officer Service No.');
+  if(missing.length){ if(err){err.innerHTML='<i class="fa-solid fa-circle-exclamation" style="margin-right:6px"></i><strong>Required:</strong> '+missing.join(', ');err.style.display='block';} return; }
+  const ucid=g('mcUcid')?.value?.trim();
+  const details=`${ucid?'UCID: '+ucid+' · ':''}Age: ${age} · Last seen: ${county}. ${desc}`;
+  // Create alert visible to all except judiciary
+  const alertObj={
+    id:Date.now(), lv:'critical', type:'missingChild',
+    ti:`🚨 Missing Child Alert — ${county}`,
+    de:details,
+    so:`Reported by ${ROLES[S.role].name} (${ROLES[S.role].label}) · Officer: ${officer}`,
+    time:fmt(new Date().toISOString())
+  };
+  S.alerts.unshift(alertObj);
+  logA(`MISSING CHILD ALERT broadcast by ${ROLES[S.role].label} (${ROLES[S.role].name}) — Last seen: ${county}`,'Alert','crit');
+  closeMissingChildModal();
+  renderAlerts(); updateBadges(); renderDashAlerts();
+  toast('w','Missing Child Alert Broadcast','All eligible agencies have been notified');
+}
+
+/* ══════════════════════════════════════════════
+   ANALYTICS
+══════════════════════════════════════════════ */
+function updateAnStats(){
+  const tot=S.children.length,cC=S.children.filter(c=>c.category==='C').length,ct=S.children.filter(c=>c.status==='In Court').length;
+  const g=id=>document.getElementById(id);
+  if(g('aTt'))g('aTt').textContent=tot;
+  if(g('aCc'))g('aCc').textContent=cC;
+  if(g('aCt'))g('aCt').textContent=ct;
+  const pct=(n,d)=>d?Math.round(n/d*100)+'%':'0%';
+  if(g('pC'))g('pC').style.width=pct(cC,tot);
+  if(g('pCt'))g('pCt').style.width=pct(ct,tot);
+}
+
+let cC_,cS_;
+function getChartOpts(){
+  const isDark=S.theme==='dark';
+  return{textColor:isDark?'#4a6278':'#6b7280',gridColor:isDark?'rgba(255,255,255,.04)':'rgba(0,0,0,.06)',borderColor:isDark?'#0c1628':'#ffffff'};
+}
+function initCharts(){
+  if(S.cI){updateCharts();return;}S.cI=true;
+  const o=getChartOpts();
+  const cats=['A','B','C','D'],cc=cats.map(c=>S.children.filter(x=>x.category===c).length);
+  cC_=new Chart(document.getElementById('cCat'),{type:'doughnut',data:{labels:['Cat. A — CICL','Cat. B — CiCL','Cat. C — Trafficked','Cat. D — Unaccompanied'],datasets:[{data:cc,backgroundColor:['rgba(90,164,212,.8)','rgba(71,181,212,.8)','rgba(224,85,112,.8)','rgba(212,168,71,.8)'],borderColor:o.borderColor,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{family:"'Inter'",size:10},boxWidth:10,padding:10}}},cutout:'65%'}});
+  const stats=['Registered','In Care','In Court','Detained','Reintegrated','Discharged & Anonymised'];
+  cS_=new Chart(document.getElementById('cStat'),{type:'bar',data:{labels:stats,datasets:[{data:stats.map(s=>S.children.filter(c=>c.status===s).length),backgroundColor:['rgba(71,181,212,.7)','rgba(90,164,212,.7)','rgba(212,168,71,.7)','rgba(224,85,112,.7)','rgba(88,196,154,.7)','rgba(100,116,139,.4)'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{display:false}},y:{ticks:{color:o.textColor,stepSize:1},grid:{color:o.gridColor}}}}});
+}
+function updateCharts(){
+  if(!S.cI)return;
+  if(cC_){cC_.data.datasets[0].data=['A','B','C','D'].map(c=>S.children.filter(x=>x.category===c).length);cC_.update();}
+  if(cS_){cS_.data.datasets[0].data=['Registered','In Care','In Court','Detained','Reintegrated','Discharged & Anonymised'].map(s=>S.children.filter(c=>c.status===s).length);cS_.update();}
+}
+function initAnalyticsCharts(){
+  if(S.aI)return;S.aI=true;
+  const o=getChartOpts();
+  const days=Array.from({length:14},(_,i)=>{const d=new Date(Date.now()-(13-i)*864e5);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});});
+  new Chart(document.getElementById('cTm'),{type:'line',data:{labels:days,datasets:[{label:'Registrations',data:[2,1,3,2,4,1,2,3,2,4,3,5,2,3],borderColor:'#47b5d4',backgroundColor:'rgba(71,181,212,.07)',fill:true,tension:.4,pointBackgroundColor:'#47b5d4',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{color:o.gridColor}},y:{ticks:{color:o.textColor,stepSize:1},grid:{color:o.gridColor}}}}});
+  const counties=['Nairobi','Mombasa','Kisumu','Kilifi','Nakuru','Other'];
+  new Chart(document.getElementById('cCo'),{type:'bar',data:{labels:counties,datasets:[{data:counties.map(c=>S.children.filter(x=>x.county===c).length),backgroundColor:'rgba(90,164,212,.65)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:o.textColor,font:{size:9}},grid:{color:o.gridColor}},y:{ticks:{color:o.textColor,font:{size:10}},grid:{display:false}}}}});
+  new Chart(document.getElementById('cTg'),{type:'polarArea',data:{labels:['Arrest','Rescue','Court Filing','Health Ref.','DCS Complaint','Border'],datasets:[{data:[1,2,1,1,1,1],backgroundColor:['rgba(224,85,112,.6)','rgba(212,168,71,.6)','rgba(71,181,212,.6)','rgba(90,164,212,.6)','rgba(168,85,247,.6)','rgba(88,196,154,.6)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{size:10},boxWidth:9,padding:8}}},scales:{r:{grid:{color:o.gridColor},ticks:{display:false}}}}});
+  new Chart(document.getElementById('cAg'),{type:'doughnut',data:{labels:['Police','DCS','Judiciary','Health','Immigration'],datasets:[{data:[1,3,1,1,1],backgroundColor:['rgba(90,164,212,.8)','rgba(71,181,212,.8)','rgba(212,168,71,.8)','rgba(224,85,112,.8)','rgba(168,85,247,.8)'],borderColor:o.borderColor,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:o.textColor,font:{size:10},boxWidth:9,padding:8}}},cutout:'58%'}});
+}
+
+/* ══════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════ */
+function gSearch(v){if(v.length<2)return;goTab('cases');const cs=document.getElementById('cSr');if(cs)cs.value=v;renderCases();}
+function filterCases(v){renderCases();}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+function toast(type,title,body){
+  const icons={s:'<i class="fa-solid fa-circle-check" style="color:var(--mint)"></i>',e:'<i class="fa-solid fa-circle-xmark" style="color:var(--rose)"></i>',w:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--gold)"></i>'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span style="font-size:16px;flex-shrink:0">${icons[type]||icons.s}</span><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;line-height:1.3">${title}</div>${body?`<div style="font-size:10.5px;color:var(--text3);margin-top:2px">${body}</div>`:''}</div><span class="tc" onclick="this.parentElement.remove()">×</span>`;
+  document.getElementById('tw').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},4500);
+}
+
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+function fmt(iso){const d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fmtS(iso){return new Date(iso).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function scls(s){const m={'Registered':'sReg','In Care':'sCare','In Court':'sCourt','Detained':'sDet','Reintegrated':'sRein'};return m[s]||'sDis';}
+function doLogout(){if(confirm('End session?')){sessionStorage.clear();location.reload();}}
+
+/* ══════════════════════════════════════════════
+   PERSISTENCE
+══════════════════════════════════════════════ */
+function loadD(){try{const c=sessionStorage.getItem('k_c5'),a=sessionStorage.getItem('k_a5');if(c)S.children=JSON.parse(c);if(a)S.audit=JSON.parse(a);}catch(e){}}
+function saveD(){try{sessionStorage.setItem('k_c5',JSON.stringify(S.children));sessionStorage.setItem('k_a5',JSON.stringify(S.audit));}catch(e){}}
+
+/* ══════════════════════════════════════════════
+   SEED DATA
+══════════════════════════════════════════════ */
+function seed(){
+  const n=new Date(),ago=d=>new Date(n-d*864e5).toISOString();
+  const mk=(t,user,role,action,type,sev)=>({time:fmt(t),user,role,action,type,sev,session:'SID-'+Math.random().toString(36).substr(2,6).toUpperCase(),ip:simIP(role.toLowerCase())});
+  S.children=[
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'C',trigger:'Rescue from Trafficking Situation',status:'In Care',county:'Kisumu',agency:'Dept. of Children Services',placement:"St. Francis Children's Home",age:'13–15 years',legalAid:'Yes',notes:'Rescued from domestic servitude. Medical referral completed. Psychological support arranged.',registered:ago(1),officerId:'DCS-KSM-0042',supervisor:'DCS-KSM-SUP-001',registeredByRole:'DCS',
+    audit:[mk(ago(1),'Sgt. Ochieng','POLICE','UCID generated on rescue — trafficking situation confirmed','Registration','warn'),mk(ago(.8),'Jane Mwangi','DCS',"Child transferred to St. Francis Children's Home. Intake completed.",'Edit','warn')]},
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'B',trigger:"Court Filing (Children's Court)",status:'In Court',county:'Nairobi',agency:"Judiciary — Children's Court",placement:"Nairobi Children's Court",age:'10–12 years',legalAid:'Pending',notes:"Child victim in criminal proceedings. Sexual exploitation case. Witness protection measures in place.",registered:ago(5),officerId:'JUD-NRB-0078',supervisor:'JUD-NRB-SUP-003',registeredByRole:'JUDICIARY',
+    audit:[mk(ago(5),'Hon. Achieng','JUDICIARY','Court filing registered — sexual exploitation case','Registration','warn'),mk(ago(4),'ODPP Prosecutor','JUDICIARY','Prosecution file opened. Evidence filed under seal.','Edit','warn')]},
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'A',trigger:'Arrest / Apprehension by Police',status:'Detained',county:'Mombasa',agency:'Kenya Police Service',placement:'Shimo La Tewa Remand Home',age:'14–16 years',legalAid:'Yes',notes:'Petty theft. Awaiting diversion assessment. First contact with justice system. No prior record.',registered:ago(9),officerId:'KPS-MSA-2891',supervisor:'KPS-MSA-SUP-007',registeredByRole:'POLICE',
+    audit:[mk(ago(9),'Sgt. Omondi','POLICE','UCID generated on arrest — first offence, petty theft','Registration','warn'),mk(ago(8),'Jane Mwangi','DCS','Placed in Shimo La Tewa Remand Home. Diversion referral initiated.','Edit','warn')]},
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'D',trigger:'Unaccompanied Child at Border Point',status:'In Care',county:'Eldoret / Uasin Gishu',agency:'Kenya Immigration Service',placement:'UNHCR Transit Centre, Kakuma',age:'8–11 years',legalAid:'Yes',notes:'Found at Busia border crossing without guardian or documentation. Asylum claim under assessment.',registered:ago(3),officerId:'KIS-ELD-0022',supervisor:'KIS-ELD-SUP-001',registeredByRole:'DCS',
+    audit:[mk(ago(3),'Immigration Officer Barasa','DCS','UCID generated — unaccompanied minor at Busia border crossing','Registration','warn')]},
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'C',trigger:'Health Facility — Child Abuse Referral',status:'Registered',county:'Kilifi',agency:'Ministry of Health',placement:'Under DCS Assessment',age:'5–9 years',legalAid:'Yes',notes:'Referred from Kilifi County Hospital. FGM suspected. Care and protection order sought by DCS.',registered:ago(.3),officerId:'MOH-KFI-0033',supervisor:'MOH-KFI-SUP-002',registeredByRole:'DCS',
+    audit:[mk(ago(.3),'Dr. Kadenge','DCS','UCID generated — referral from Kilifi County Hospital. FGM investigation initiated.','Registration','warn')]},
+    {ucid:'KCDB-'+crypto.randomUUID(),category:'B',trigger:'Complaint Filed with DCS',status:'Reintegrated',county:'Nakuru',agency:'Dept. of Children Services',placement:'Family Home, Nakuru',age:'5–9 years',legalAid:'No',notes:'Neglect complaint resolved. Family mediation completed. Reintegrated with extended family under supervision order.',registered:ago(45),officerId:'DCS-NKR-0019',supervisor:'DCS-NKR-SUP-001',registeredByRole:'DCS',
+    audit:[mk(ago(45),'Jane Mwangi','DCS','UCID generated — neglect complaint filed by school.','Registration','warn'),mk(ago(10),'Jane Mwangi','DCS',"Family reintegration completed. Supervision order issued by Children's Court.",'Edit','warn')]},
+  ];
+  saveD();
+}
+
+/* ══════════════════════════════════════════════
+   ADMIN ENGINE
+══════════════════════════════════════════════ */
+
+// ── Presence tracking (localStorage heartbeat) ──
+const PRESENCE_KEY = 'kcdb_presence_v2';
+const PRESENCE_TTL = 5 * 60 * 1000; // 5 min = active
+
+// Simulated other sessions seeded into localStorage for realism
+const SIM_SESSIONS = [
+  {sid:'SID-DEMO-KPS01', role:'POLICE',   name:'Sgt. Kipchoge',  ini:'SK', col:'#5aa4d4', ip:'41.204.16.88',    tab:'cases',     joined: Date.now()-4*60000},
+  {sid:'SID-DEMO-JUD02', role:'JUDICIARY',name:'Hon. Achieng',   ini:'HA', col:'#d4a847', ip:'105.160.35.44',   tab:'dashboard', joined: Date.now()-11*60000},
+  {sid:'SID-DEMO-DCS03', role:'DCS',      name:'Jane Mwangi',    ini:'JM', col:'#47b5d4', ip:'196.201.212.7',   tab:'register',  joined: Date.now()-2*60000},
+  {sid:'SID-DEMO-MOH04', role:'DCS',      name:'Dr. Kadenge',    ini:'DK', col:'#47b5d4', ip:'197.232.55.120',  tab:'cases',     joined: Date.now()-18*60000, idle:true},
+];
+
+function writePresence(){
+  if(!S.role) return;
+  try{
+    const all = readAllPresence();
+    // Remove stale own session
+    const filtered = all.filter(p=>p.sid!==SESSION_ID);
+    filtered.push({
+      sid: SESSION_ID,
+      role: ROLES[S.role].label,
+      name: ROLES[S.role].name,
+      ini:  ROLES[S.role].ini,
+      col:  ROLES[S.role].col,
+      ip:   simIP(S.role),
+      tab:  document.querySelector('[data-t].on')?.dataset.t || 'dashboard',
+      ts:   Date.now(),
+      idle: false,
+    });
+    localStorage.setItem(PRESENCE_KEY, JSON.stringify(filtered));
+  }catch(e){}
+}
+
+function readAllPresence(){
+  try{
+    const raw = localStorage.getItem(PRESENCE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+
+function getLiveSessions(){
+  const now = Date.now();
+  const real = readAllPresence().filter(p=>now - p.ts < PRESENCE_TTL);
+  // Merge simulated sessions (always fresh for demo)
+  const simActive = SIM_SESSIONS.filter(s=>!s.idle && now-s.joined < 30*60000);
+  const simIdle   = SIM_SESSIONS.filter(s=>s.idle  || now-s.joined >= 10*60000);
+  // Avoid duplicate sids
+  const sids = new Set(real.map(p=>p.sid));
+  const merged = [...real];
+  [...simActive, ...simIdle].forEach(s=>{ if(!sids.has(s.sid)){ sids.add(s.sid); merged.push({...s, ts: s.joined, idle: s.idle||false}); } });
+  return merged.sort((a,b)=>b.ts-a.ts);
+}
+
+// ── System health checks ──
+const SYS_SERVICES = [
+  {id:'db',    name:'Case Database',       icon:'fa-database',    checkFn: ()=>({ok:true, ms: 12+Math.random()*8})},
+  {id:'audit', name:'Audit Engine',        icon:'fa-list-check',  checkFn: ()=>({ok:true, ms: 4+Math.random()*4})},
+  {id:'enc',   name:'Encryption Service',  icon:'fa-lock',        checkFn: ()=>({ok:!BREACH.encrypted||BREACH.encKey!=null, ms: 2+Math.random()*3})},
+  {id:'cdn',   name:'Font / Asset CDN',    icon:'fa-globe',       checkFn: ()=>({ok: document.fonts?.size>0, ms: 38+Math.random()*20})},
+  {id:'store', name:'Session Storage',     icon:'fa-hard-drive',  checkFn: ()=>{ try{sessionStorage.setItem('_hc','1');sessionStorage.removeItem('_hc');return{ok:true,ms:1};}catch(e){return{ok:false,ms:0};}}},
+  {id:'crypto',name:'Web Crypto API',      icon:'fa-key',         checkFn: ()=>({ok:!!window.crypto?.subtle, ms: 1})},
+];
+
+// ── Breach detection engine ──
+const BREACH = {
+  events: [],           // detected anomaly log
+  riskScore: 0,         // 0-100
+  active: false,        // breach declared
+  encrypted: false,     // data encrypted
+  encKey: null,         // CryptoKey
+  encKeyHex: null,      // exportable hex
+  encryptedStore: {},   // backup of original values before encryption
+  startTime: null,
+};
+
+const DETECTION_RULES = [
+  {id:'velocity',  name:'Access Velocity',     desc:'> 8 views in 60 sec', icon:'fa-gauge-high',    weight:25, fn: ()=>{
+    const min=Date.now()-60000;
+    return S.audit.filter(e=>e.type==='View'&&new Date(e.time).getTime()>min).length > 8;
+  }},
+  {id:'offhours',  name:'Off-Hours Access',    desc:'Access outside 06:00–22:00', icon:'fa-moon', weight:15, fn: ()=>{
+    const h=new Date().getHours(); return h<6||h>=22;
+  }},
+  {id:'bulkexport',name:'Bulk Export',         desc:'> 2 CSV exports in session', icon:'fa-file-export', weight:20, fn: ()=>{
+    return S.audit.filter(e=>e.msg&&e.msg.includes('exported')).length > 2;
+  }},
+  {id:'roleesc',   name:'Role Escalation',     desc:'Multiple role changes', icon:'fa-user-shield', weight:30, fn: ()=>{
+    return S.audit.filter(e=>e.type==='Auth'&&e.msg&&e.msg.includes('Signed in')).length > 3;
+  }},
+  {id:'discharge', name:'Mass Discharge',      desc:'> 2 discharges in session', icon:'fa-box-archive', weight:35, fn: ()=>{
+    return S.audit.filter(e=>e.type==='Data Minimisation').length > 2;
+  }},
+  {id:'catbreach', name:'Cross-Role Data Access', desc:'Access attempt outside role scope', icon:'fa-eye', weight:40, fn: ()=>{
+    return S.audit.filter(e=>e.msg&&e.msg.toLowerCase().includes('access restricted')).length > 0;
+  }},
+];
+
+function runBreachDetection(){
+  let score = 0;
+  const now = new Date();
+  DETECTION_RULES.forEach(rule=>{
+    try{
+      const triggered = rule.fn();
+      if(triggered){
+        score += rule.weight;
+        // Check if already logged this rule recently
+        const recent = BREACH.events.find(e=>e.ruleId===rule.id && Date.now()-e.ts < 60000);
+        if(!recent){
+          BREACH.events.unshift({
+            ruleId: rule.id,
+            name: rule.name,
+            msg: `${rule.name}: ${rule.desc} — triggered at ${now.toLocaleTimeString('en-GB')}`,
+            score: rule.weight,
+            severity: rule.weight>=35?'crit':rule.weight>=20?'high':'med',
+            ts: Date.now(),
+            time: fmt(now.toISOString()),
+          });
+        }
+      }
+    }catch(e){}
+  });
+  BREACH.riskScore = Math.min(100, score);
+
+  // Auto-declare breach if score >= 70
+  if(BREACH.riskScore >= 70 && !BREACH.active){
+    simulateBreachDetected('auto','Composite risk score exceeded threshold ('+BREACH.riskScore+'/100)','CRITICAL');
+  }
+
+  return BREACH.riskScore;
+}
+
+function renderAdminPanel(){
+  if(!document.getElementById('tab-admin').classList.contains('on')) return;
+
+  // Write own presence
+  writePresence();
+
+  // ── Live users ──
+  const sessions = getLiveSessions();
+  const liveEl = document.getElementById('liveUsersList');
+  document.getElementById('admLiveCount').textContent = sessions.length;
+  if(liveEl){
+    if(!sessions.length){
+      liveEl.innerHTML='<div class="empty" style="padding:16px 0"><i class="fa-solid fa-users" style="font-size:22px;margin-bottom:8px"></i><p>No active sessions</p></div>';
+    } else {
+      liveEl.innerHTML = sessions.map(s=>{
+        const ago = Math.round((Date.now()-s.ts)/1000);
+        const agoStr = ago<60?`${ago}s ago`:`${Math.round(ago/60)}m ago`;
+        const idleFlag = s.idle||ago>120;
+        const roleColMap={'POLICE':'#5aa4d4','DCS':'#47b5d4','JUDICIARY':'#d4a847','NCCS':'#c084fc','ADMIN':'#e05570'};
+        const col = s.col||roleColMap[s.role]||'#47b5d4';
+        const tabLabel = {dashboard:'Dashboard',cases:'Cases',register:'Register',alerts:'Alerts',audit:'Audit',analytics:'Analytics',admin:'Admin',dp:'Data Protection',agencies:'Agencies'}[s.tab]||s.tab||'—';
+        return `<div class="lu-row">
+          <div class="lu-av" style="background:${col}22;color:${col}">${s.ini||s.role.substring(0,2)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${s.name}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px">${s.role} · ${s.ip||'—'} · Viewing: <strong style="color:var(--text2)">${tabLabel}</strong></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text4);margin-top:1px">${s.sid}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="lu-pulse ${idleFlag?'idle':''}"></span>
+            <span style="font-size:9px;color:var(--text3)">${agoStr}</span>
+            <span style="font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:4px;background:${idleFlag?'rgba(212,168,71,.12)':'rgba(88,196,154,.12)'};color:${idleFlag?'var(--gold)':'var(--mint)'}">${idleFlag?'IDLE':'ACTIVE'}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── System health ──
+  const results = SYS_SERVICES.map(s=>{ const r=s.checkFn(); return{...s,...r}; });
+  const okCount = results.filter(r=>r.ok).length;
+  document.getElementById('admSysOk').textContent = `${okCount}/${results.length}`;
+  document.getElementById('sysLastCheck').textContent = new Date().toLocaleTimeString('en-GB');
+  const healthBadge = document.getElementById('sysHealthBadge');
+  if(healthBadge){
+    healthBadge.textContent = okCount===results.length?'All Systems Operational':`${results.length-okCount} System(s) Degraded`;
+    healthBadge.className = `uptime-chip ${okCount===results.length?'uptime-ok':'uptime-warn'}`;
+  }
+  const sysEl = document.getElementById('sysHealthList');
+  if(sysEl) sysEl.innerHTML = results.map(r=>`
+    <div class="sys-tile ${r.ok?'sys-ok':'sys-err'}">
+      <div class="sys-ic"><i class="fa-solid ${r.icon}"></i></div>
+      <div style="flex:1">
+        <div class="sys-name">${r.name}</div>
+        <div class="sys-status">${r.ok?'Operational':'Degraded / Unavailable'}</div>
+        <div class="sys-ms">${r.ok?`${r.ms.toFixed(1)} ms response`:'No response'}</div>
+      </div>
+      <div class="sys-dot"></div>
+    </div>`).join('');
+
+  // ── Breach detection ──
+  const score = runBreachDetection();
+  const threatLevel = score<30?'LOW':score<60?'MEDIUM':score<80?'HIGH':'CRITICAL';
+  const threatCls   = score<30?'threat-low':score<60?'threat-med':'threat-high';
+  const scoreColor  = score<30?'var(--mint)':score<60?'var(--gold)':'var(--rose)';
+  document.getElementById('admThreatScore').textContent = threatLevel;
+  document.getElementById('admThreatScore').style.color = scoreColor;
+  document.getElementById('riskScoreVal').textContent = `${score} / 100`;
+  document.getElementById('riskScoreVal').style.color = scoreColor;
+  const tbWrap = document.getElementById('threatBarWrap');
+  if(tbWrap) tbWrap.className = `threat-bar ${threatCls}`;
+  const fill = document.getElementById('threatFill');
+  if(fill) fill.style.width = score+'%';
+  const lbl = document.getElementById('threatLabel');
+  if(lbl) lbl.textContent = `Risk: ${threatLevel} — ${score<30?'System nominal':score<60?'Elevated anomaly activity':score<80?'High-risk patterns detected':'BREACH THRESHOLD EXCEEDED'}`;
+
+  // Detection rules grid
+  const rulesEl = document.getElementById('detectionRules');
+  if(rulesEl){
+    rulesEl.innerHTML = DETECTION_RULES.map(rule=>{
+      const triggered = BREACH.events.some(e=>e.ruleId===rule.id&&Date.now()-e.ts<300000);
+      return `<div style="background:${triggered?'rgba(224,85,112,.08)':'var(--bg3)'};border:1px solid ${triggered?'rgba(224,85,112,.25)':'var(--border)'};border-radius:9px;padding:10px 12px;transition:all .2s">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+          <i class="fa-solid ${rule.icon}" style="font-size:12px;color:${triggered?'var(--rose)':'var(--text3)'}"></i>
+          <span style="font-size:11px;font-weight:600;color:${triggered?'var(--rose)':'var(--text)'};">${rule.name}</span>
+          <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:${triggered?'var(--rose)':'var(--mint)'};box-shadow:0 0 5px ${triggered?'var(--rose)':'var(--mint)'};display:inline-block"></span>
+        </div>
+        <div style="font-size:9.5px;color:var(--text3)">${rule.desc}</div>
+        <div style="font-size:9px;margin-top:4px;font-weight:700;color:${triggered?'var(--rose)':'var(--text4)'}">Weight: +${rule.weight} pts · ${triggered?'⚠ TRIGGERED':'Clear'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Breach event log
+  const logEl = document.getElementById('breachLog');
+  if(logEl){
+    if(!BREACH.events.length){
+      logEl.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:12px 0;text-align:center"><i class="fa-solid fa-shield-check" style="margin-right:6px;color:var(--mint)"></i>No anomalies detected</div>';
+    } else {
+      logEl.innerHTML = BREACH.events.slice(0,30).map(e=>`
+        <div class="breach-event">
+          <div class="be-sev be-${e.severity==='crit'?'crit':e.severity==='high'?'high':'med'}"></div>
+          <div style="flex:1">
+            <div class="be-time">${e.time}</div>
+            <div class="be-msg">${e.msg}</div>
+            <span class="be-score sc-${e.severity==='crit'?'high':e.severity==='high'?'med':'low'}">+${e.score} pts · ${e.severity.toUpperCase()}</span>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // Encryption status
+  const encBadge = document.getElementById('encStatusBadge');
+  if(encBadge){
+    encBadge.innerHTML = BREACH.encrypted
+      ? '<i class="fa-solid fa-lock" style="margin-right:3px"></i>Data Encrypted'
+      : '<i class="fa-solid fa-unlock" style="margin-right:3px"></i>Data Unencrypted';
+    encBadge.className = `bdg ${BREACH.encrypted?'sCourt':'sRein'}`;
+  }
+  const encCount = document.getElementById('encFieldCount');
+  if(encCount) encCount.textContent = `${S.children.filter(c=>!c.status.includes('Discharged')).length} active records`;
+
+  // Playbook
+  renderPlaybook();
+
+  // Admin alert badge
+  const admAlert = document.getElementById('sAdmAlert');
+  if(admAlert) admAlert.style.display = BREACH.active?'flex':'none';
+}
+
+function renderPlaybook(){
+  const el = document.getElementById('responsePlaybook');
+  if(!el) return;
+  const steps = [
+    {n:1, label:'Anomaly Detected',          done: BREACH.events.length>0,          icon:'fa-radar',          desc:'Behavioural engine flags suspicious activity'},
+    {n:2, label:'Risk Score Computed',        done: BREACH.riskScore>0,              icon:'fa-chart-bar',      desc:'Composite risk score calculated across all rules'},
+    {n:3, label:'Breach Declared',            done: BREACH.active,                   icon:'fa-shield-virus',   desc:'Threshold exceeded — incident protocol activated'},
+    {n:4, label:'Data Encrypted',             done: BREACH.encrypted,                icon:'fa-lock',           desc:'AES-256-GCM encryption applied to all PII fields'},
+    {n:5, label:'All Parties Notified',       done: BREACH.active,                   icon:'fa-bell-on',        desc:'In-portal alerts sent to all active sessions'},
+    {n:6, label:'Audit Log Preserved',        done: BREACH.active,                   icon:'fa-file-shield',    desc:'Immutable incident record created in audit trail'},
+    {n:7, label:'Admin Acknowledgement',      done: false,                           icon:'fa-check-shield',   desc:'Administrator confirms incident and initiates recovery'},
+  ];
+  el.innerHTML = steps.map(s=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:800;background:${s.done?'rgba(88,196,154,.15)':'var(--bg3)'};color:${s.done?'var(--mint)':'var(--text4)'};">
+        ${s.done?'<i class="fa-solid fa-check"></i>':s.n}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:11.5px;font-weight:600;color:${s.done?'var(--text)':'var(--text3)'}">${s.label}</div>
+        <div style="font-size:10px;color:var(--text4);margin-top:1px">${s.desc}</div>
+      </div>
+      <i class="fa-solid ${s.icon}" style="font-size:12px;color:${s.done?'var(--mint)':'var(--text4)'};margin-top:2px"></i>
+    </div>`).join('');
+}
+
+// ── Breach trigger ──
+async function simulateBreachDetected(source, detail, severity){
+  if(BREACH.active) return;
+  BREACH.active = true;
+  BREACH.startTime = new Date();
+
+  // Log to audit
+  logA(`🔴 SECURITY BREACH DECLARED — Source: ${source}. ${detail}. All sessions flagged. Encryption initiated.`, 'Alert', 'crit');
+
+  // Log a breach event
+  BREACH.events.unshift({
+    ruleId:'breach',name:'BREACH DECLARED',
+    msg:`BREACH DECLARED (${source.toUpperCase()}): ${detail}`,
+    score:100,severity:'crit',ts:Date.now(),time:fmt(new Date().toISOString()),
+  });
+
+  // Notify all via banner + overlay
+  const banner = document.getElementById('breachBanner');
+  if(banner){
+    banner.style.display='flex';
+    document.getElementById('breachBannerTxt').textContent=`SECURITY BREACH DETECTED — ${detail}. Data encrypting now. Click to view.`;
+    document.getElementById('breachBannerTime').textContent=new Date().toLocaleTimeString('en-GB');
+    // Shift main content down
+    const main = document.getElementById('main');
+    if(main) main.style.paddingTop='calc(22px + 40px)';
+  }
+
+  // Show breach overlay
+  const overlay = document.getElementById('breachOverlay');
+  if(overlay){
+    overlay.classList.add('on');
+    document.getElementById('breachOverlaySub').textContent=
+      `Threat: ${severity} · ${detail}. All sensitive records are being encrypted with AES-256-GCM. All active sessions (${getLiveSessions().length}) have been flagged and notified. Do not close this window.`;
+  }
+
+  // Encrypt data
+  await encryptAllData();
+
+  // Show acknowledge button
+  const ackBtn = document.getElementById('ackBtn');
+  if(ackBtn) ackBtn.style.display='flex';
+
+  // Alert all panels
+  addAlert('critical','🔴 DATA BREACH DETECTED',`Security incident declared at ${new Date().toLocaleTimeString('en-GB')}. All data encrypted. Reason: ${detail}. Contact system administrator immediately.`,'KCDB Security Engine');
+
+  if(S.role!=='admin') toast('e','Security Incident Detected','Data encrypted. Contact your administrator immediately.');
+
+  renderAdminPanel();
+}
+
+// ── AES-256-GCM Encryption ──
+async function generateEncKey(){
+  const key = await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+  const raw  = await crypto.subtle.exportKey('raw',key);
+  const hex  = Array.from(new Uint8Array(raw)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return { key, hex };
+}
+
+async function aesEncrypt(text, key){
+  const iv  = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ct  = await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));
+  // Pack: iv(24 hex) + ':' + ciphertext(hex)
+  const ivHex = Array.from(iv).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const ctHex = Array.from(new Uint8Array(ct)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `[ENC:${ivHex}:${ctHex}]`;
+}
+
+async function aesDecrypt(enc, key){
+  try{
+    const parts = enc.slice(5,-1).split(':');
+    const iv = new Uint8Array(parts[0].match(/.{2}/g).map(b=>parseInt(b,16)));
+    const ct = new Uint8Array(parts[1].match(/.{2}/g).map(b=>parseInt(b,16)));
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+    return new TextDecoder().decode(pt);
+  }catch(e){ return enc; }
+}
+
+async function encryptAllData(){
+  const bar   = document.getElementById('encProgressBar');
+  const label = document.getElementById('encProgressLabel');
+
+  // Generate key
+  const {key, hex} = await generateEncKey();
+  BREACH.encKey    = key;
+  BREACH.encKeyHex = hex;
+
+  // Display key
+  const keyDisp = document.getElementById('breachKeyDisplay');
+  if(keyDisp) keyDisp.textContent = hex.match(/.{1,8}/g).join('-');
+
+  // Encrypt sensitive fields on all active children
+  const active = S.children.filter(c=>!c.status.includes('Discharged'));
+  const SENSITIVE_FIELDS = ['notes','placement','trigger','county'];
+  for(let i=0;i<active.length;i++){
+    const c = active[i];
+    // Backup originals
+    if(!BREACH.encryptedStore[c.ucid]) BREACH.encryptedStore[c.ucid]={};
+    for(const f of SENSITIVE_FIELDS){
+      if(c[f] && !c[f].startsWith('[ENC:')){
+        BREACH.encryptedStore[c.ucid][f] = c[f];
+        c[f] = await aesEncrypt(c[f], key);
+      }
+    }
+    // Progress
+    const pct = Math.round((i+1)/active.length*100);
+    if(bar)   bar.style.width   = pct+'%';
+    if(label) label.textContent = `Encrypting records… ${pct}% (${i+1}/${active.length})`;
+    await new Promise(r=>setTimeout(r,60)); // animate
+  }
+
+  BREACH.encrypted = true;
+  if(label) label.textContent = `✓ All ${active.length} records encrypted with AES-256-GCM`;
+  saveD();
+  logA(`AES-256-GCM encryption applied to ${active.length} records. Key fingerprint: ${hex.substring(0,16)}…`,'System','crit');
+}
+
+// ── Manual encrypt / decrypt controls ──
+async function manualEncrypt(){
+  if(BREACH.encrypted){ toast('w','Already Encrypted','Records are already encrypted.'); return; }
+  if(!ROLES[S.role].canViewAdmin){ toast('e','Access Denied','Encryption controls require Admin role.'); return; }
+  toast('w','Encrypting…','Applying AES-256-GCM to all active records');
+  const {key, hex} = await generateEncKey();
+  BREACH.encKey = key; BREACH.encKeyHex = hex;
+  const active = S.children.filter(c=>!c.status.includes('Discharged'));
+  const SENSITIVE_FIELDS = ['notes','placement','trigger','county'];
+  for(const c of active){
+    if(!BREACH.encryptedStore[c.ucid]) BREACH.encryptedStore[c.ucid]={};
+    for(const f of SENSITIVE_FIELDS){
+      if(c[f]&&!c[f].startsWith('[ENC:')){
+        BREACH.encryptedStore[c.ucid][f]=c[f];
+        c[f]=await aesEncrypt(c[f],key);
+      }
+    }
+  }
+  BREACH.encrypted=true;
+  saveD(); renderAdminPanel();
+  toast('s','Encryption Complete',`Key: ${hex.substring(0,16)}… — Store securely!`);
+  logA(`Manual encryption applied by ADMIN. Key fingerprint: ${hex.substring(0,16)}…`,'System','warn');
+}
+
+async function manualDecrypt(){
+  if(!BREACH.encKey){ toast('e','No Key','No encryption key loaded in this session.'); return; }
+  const active = S.children.filter(c=>!c.status.includes('Discharged'));
+  const SENSITIVE_FIELDS = ['notes','placement','trigger','county'];
+  for(const c of active){
+    const backup = BREACH.encryptedStore[c.ucid]||{};
+    for(const f of SENSITIVE_FIELDS){
+      if(backup[f]) c[f]=backup[f]; // restore from in-memory backup
+      else if(c[f]&&c[f].startsWith('[ENC:')) c[f]=await aesDecrypt(c[f],BREACH.encKey);
+    }
+  }
+  BREACH.encrypted=false;
+  saveD(); renderAdminPanel();
+  toast('s','Decryption Complete','All records restored to plaintext');
+  logA('Manual decryption applied by ADMIN — data restored to plaintext','System','warn');
+}
+
+// ── Overlay controls ──
+function copyBreachKey(){
+  const key = BREACH.encKeyHex;
+  if(key){ navigator.clipboard.writeText(key).catch(()=>{});
+    toast('s','Key Copied','Store the decryption key securely and offline'); }
+}
+function closeBreachOverlay(){
+  document.getElementById('breachOverlay').classList.remove('on');
+}
+function acknowledgeBreachAdmin(){
+  logA('BREACH ACKNOWLEDGED by ADMIN — incident containment initiated. Recovery protocol started.','System','crit');
+  toast('s','Incident Acknowledged','Recovery protocol initiated. Audit record created.');
+  closeBreachOverlay();
+  renderAdminPanel();
+}
+
+// ── Admin refresh ──
+function refreshAdminPanel(){
+  writePresence();
+  renderAdminPanel();
+  toast('s','Admin Panel Refreshed','');
+}
+
+// ── Heartbeat ──
+let _presenceInterval = null;
+function startPresenceHeartbeat(){
+  writePresence();
+  _presenceInterval = setInterval(()=>{ writePresence(); if(document.getElementById('tab-admin').classList.contains('on')) renderAdminPanel(); }, 15000);
+}
+
+// ── Hook into goTab to refresh admin ──
+const _origGoTab = goTab;
+// Override renderAll to also refresh admin if visible
+const _origRenderAll = renderAll;
+
+/* ══════════════════════════════════════════════
+   PORTAL BACKGROUND — SUBTLE LIVE PARTICLES
+══════════════════════════════════════════════ */
+function initPortalBgCanvas(){
+  const canvas=document.getElementById('portalBgCanvas'); if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  let W,H;
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  const particles=[];
+  const emojis=['⭐','💙','🌟','✨','💚','🌸','🦋','🌈'];
+  for(let i=0;i<20;i++){
+    particles.push({
+      x:Math.random()*2,y:Math.random(),
+      speed:(0.0003+Math.random()*0.0005),
+      size:8+Math.random()*12,
+      emoji:emojis[Math.floor(Math.random()*emojis.length)],
+      phase:Math.random()*Math.PI*2,
+      phaseSpeed:(0.005+Math.random()*0.01),
+      opacity:0.08+Math.random()*0.12,
+    });
+  }
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.x-=p.speed; if(p.x<-0.1)p.x=1.1;
+      p.phase+=p.phaseSpeed;
+      const px=p.x*W, py=p.y*H+Math.sin(p.phase)*30;
+      ctx.save();
+      ctx.globalAlpha=p.opacity*(0.7+0.3*Math.sin(p.phase));
+      ctx.font=`${p.size}px serif`;
+      ctx.fillText(p.emoji,px,py);
+      ctx.restore();
+    });
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ══════════════════════════════════════════════
+   WORLD CANVAS — LIVE CHILDREN'S BACKGROUND
+══════════════════════════════════════════════ */
+function initWorldCanvas(){
+  const canvas = document.getElementById('worldCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, animId;
+  const elements = [];
+  const rnd = (a,b) => a + Math.random()*(b-a);
+
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  class Balloon {
+    constructor(){this.reset(true)}
+    reset(init=false){
+      this.x=rnd(0.05,0.95)*W; this.y=init?rnd(0,1)*H:H+60;
+      this.r=rnd(14,30); this.vx=rnd(-0.3,0.3); this.vy=-rnd(0.4,1.0);
+      this.hue=rnd(0,360); this.swing=rnd(0,Math.PI*2); this.swingSpeed=rnd(0.015,0.04);
+      this.opacity=rnd(0.65,0.92); this.stringLen=rnd(30,55);
+    }
+    update(){ this.swing+=this.swingSpeed; this.x+=this.vx+Math.sin(this.swing)*0.35; this.y+=this.vy; if(this.y<-this.r-this.stringLen)this.reset(); }
+    draw(){
+      ctx.save(); ctx.globalAlpha=this.opacity;
+      ctx.beginPath(); ctx.moveTo(this.x,this.y+this.r);
+      ctx.quadraticCurveTo(this.x+8,this.y+this.r+this.stringLen*0.5,this.x,this.y+this.r+this.stringLen);
+      ctx.strokeStyle=`hsla(${this.hue},60%,40%,0.5)`; ctx.lineWidth=1.2; ctx.stroke();
+      const g=ctx.createRadialGradient(this.x-this.r*0.3,this.y-this.r*0.3,this.r*0.1,this.x,this.y,this.r);
+      g.addColorStop(0,`hsla(${this.hue},90%,90%,1)`); g.addColorStop(1,`hsla(${this.hue},80%,55%,1)`);
+      ctx.beginPath(); ctx.ellipse(this.x,this.y,this.r*0.85,this.r,0,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(this.x-this.r*0.25,this.y-this.r*0.28,this.r*0.22,this.r*0.16,-Math.PI/5,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(this.x,this.y+this.r,3,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${this.hue},70%,40%,0.8)`; ctx.fill(); ctx.restore();
+    }
+  }
+
+  class Star {
+    constructor(){this.reset(true)}
+    reset(init=false){ this.x=rnd(0,W); this.y=rnd(0,H); this.size=rnd(2,5); this.phase=rnd(0,Math.PI*2); this.speed=rnd(0.02,0.06); this.hue=rnd(30,60); this.vy=-rnd(0.05,0.18); this.opacity=init?rnd(0,1):0; }
+    update(){ this.phase+=this.speed; this.opacity=0.4+0.6*Math.abs(Math.sin(this.phase)); this.y+=this.vy; if(this.y<-10)this.reset(); }
+    draw(){
+      const s=this.size; ctx.save(); ctx.globalAlpha=this.opacity; ctx.translate(this.x,this.y);
+      ctx.beginPath();
+      for(let i=0;i<8;i++){const a=i*Math.PI/4+this.phase*0.1,r2=i%2===0?s:s*0.38;i===0?ctx.moveTo(Math.cos(a)*r2,Math.sin(a)*r2):ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);}
+      ctx.closePath(); ctx.fillStyle=`hsla(${this.hue},95%,70%,1)`; ctx.fill(); ctx.restore();
+    }
+  }
+
+  class Cloud {
+    constructor(){this.reset(true)}
+    reset(init=false){ this.x=init?rnd(-200,W+200):-300; this.y=rnd(0.03,0.32)*H; this.scale=rnd(0.6,1.4); this.vx=rnd(0.15,0.5); this.opacity=rnd(0.6,0.88); }
+    update(){ this.x+=this.vx; if(this.x>W+300)this.reset(); }
+    draw(){
+      ctx.save(); ctx.globalAlpha=this.opacity; ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale);
+      ctx.fillStyle='rgba(255,255,255,0.92)';
+      [[0,0,28],[22,12,22],[42,0,26],[60,8,20],[18,-8,18],[38,-6,15]].forEach(([cx,cy,cr])=>{ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();});
+      ctx.restore();
+    }
+  }
+
+  class Kite {
+    constructor(){this.reset(true)}
+    reset(init=false){ this.x=rnd(0.1,0.9)*W; this.y=init?rnd(0.05,0.6)*H:H+50; this.vy=-rnd(0.2,0.5); this.swing=rnd(0,Math.PI*2); this.swingSpeed=rnd(0.01,0.03); this.size=rnd(18,32); this.hue=rnd(0,360); this.tailPhase=rnd(0,Math.PI*2); }
+    update(){ this.swing+=this.swingSpeed; this.x+=Math.sin(this.swing)*0.4; this.y+=this.vy; this.tailPhase+=0.06; if(this.y<-100)this.reset(); }
+    draw(){
+      ctx.save(); ctx.translate(this.x,this.y); const s=this.size;
+      ctx.beginPath(); ctx.moveTo(0,-s); ctx.lineTo(s*0.6,0); ctx.lineTo(0,s); ctx.lineTo(-s*0.6,0); ctx.closePath();
+      const g=ctx.createLinearGradient(-s,0,s,0); g.addColorStop(0,`hsla(${this.hue},80%,60%,0.85)`); g.addColorStop(1,`hsla(${this.hue+40},80%,70%,0.85)`);
+      ctx.fillStyle=g; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-s); ctx.lineTo(0,s); ctx.moveTo(-s*0.6,0); ctx.lineTo(s*0.6,0);
+      ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,s);
+      for(let i=1;i<=4;i++){ctx.lineTo(Math.sin(this.tailPhase+i)*14,s+i*18);}
+      ctx.strokeStyle=`hsla(${this.hue},60%,40%,0.5)`; ctx.lineWidth=1.5; ctx.stroke();
+      for(let i=1;i<=3;i++){ctx.beginPath();ctx.arc(Math.sin(this.tailPhase+i)*14,s+i*18,4,0,Math.PI*2);ctx.fillStyle=`hsla(${this.hue+i*30},80%,60%,0.6)`;ctx.fill();}
+      ctx.restore();
+    }
+  }
+
+  class Bird {
+    constructor(){this.reset(true)}
+    reset(init=false){ this.x=init?rnd(-50,W+50):-80; this.y=rnd(0.05,0.45)*H; this.vx=rnd(0.5,1.8); this.vy=rnd(-0.1,0.1); this.phase=rnd(0,Math.PI*2); this.phaseSpeed=rnd(0.06,0.12); this.size=rnd(7,13); this.opacity=rnd(0.4,0.7); }
+    update(){ this.x+=this.vx; this.y+=this.vy; this.phase+=this.phaseSpeed; if(this.x>W+100)this.reset(); }
+    draw(){
+      ctx.save(); ctx.globalAlpha=this.opacity; ctx.translate(this.x,this.y);
+      const f=Math.sin(this.phase)*this.size*0.7;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(-this.size,-f,-this.size*2,0); ctx.moveTo(0,0); ctx.quadraticCurveTo(this.size,-f,this.size*2,0);
+      ctx.strokeStyle='rgba(70,70,70,0.55)'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
+    }
+  }
+
+  class Butterfly {
+    constructor(){this.reset(true)}
+    reset(init=false){ this.x=rnd(0,W); this.y=init?rnd(0.3,1)*H:H+40; this.vx=rnd(-0.3,0.3); this.vy=-rnd(0.15,0.5); this.phase=rnd(0,Math.PI*2); this.ps=rnd(0.04,0.09); this.hue=rnd(0,360); this.size=rnd(8,16); this.opacity=rnd(0.5,0.85); }
+    update(){ this.phase+=this.ps; this.x+=this.vx+Math.sin(this.phase*0.5)*0.5; this.y+=this.vy; if(this.y<-30)this.reset(); }
+    draw(){
+      ctx.save(); ctx.globalAlpha=this.opacity; ctx.translate(this.x,this.y);
+      const f=Math.cos(this.phase)*this.size*0.8;
+      ctx.beginPath(); ctx.ellipse(-f,0,this.size,this.size*0.7,Math.PI*0.3,0,Math.PI*2); ctx.fillStyle=`hsla(${this.hue},85%,65%,0.75)`; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(f,0,this.size,this.size*0.7,-Math.PI*0.3,0,Math.PI*2); ctx.fillStyle=`hsla(${this.hue+30},85%,65%,0.75)`; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0,0,2.5,this.size*0.5,0,0,Math.PI*2); ctx.fillStyle='rgba(50,30,10,0.6)'; ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function populate(){
+    elements.length=0;
+    const m=W<600;
+    const c=m?{b:5,st:14,cl:3,k:2,bi:4,bu:4}:{b:10,st:24,cl:6,k:4,bi:8,bu:7};
+    for(let i=0;i<c.b;i++)elements.push(new Balloon());
+    for(let i=0;i<c.st;i++)elements.push(new Star());
+    for(let i=0;i<c.cl;i++)elements.push(new Cloud());
+    for(let i=0;i<c.k;i++)elements.push(new Kite());
+    for(let i=0;i<c.bi;i++)elements.push(new Bird());
+    for(let i=0;i<c.bu;i++)elements.push(new Butterfly());
+  }
+  populate(); window.addEventListener('resize',populate);
+
+  function drawBg(){
+    const t=Date.now()*0.001;
+    const sky=ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#87CEEB'); sky.addColorStop(0.55,'#B0E0E6'); sky.addColorStop(0.75,'#C8F0C8'); sky.addColorStop(1,'#8BC34A');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+    // Sun
+    const sx=W*0.85,sy=H*0.12,sr=Math.min(W,H)*0.06;
+    const sg=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr*1.8);
+    sg.addColorStop(0,'rgba(255,240,80,0.95)'); sg.addColorStop(0.5,'rgba(255,200,40,0.4)'); sg.addColorStop(1,'rgba(255,200,40,0)');
+    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+    ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fillStyle='rgba(255,235,60,0.88)'; ctx.fill();
+    ctx.save(); ctx.translate(sx,sy);
+    for(let i=0;i<12;i++){ctx.save();ctx.rotate(i*Math.PI/6+t*0.04);const rl=sr*(1.5+0.2*Math.sin(t+i));ctx.fillStyle=`rgba(255,230,50,${0.06+0.03*Math.sin(t*2+i)})`;ctx.beginPath();ctx.ellipse(0,-rl,2,rl*0.5,-Math.PI/2,0,Math.PI*2);ctx.fill();ctx.restore();}
+    ctx.restore();
+    // Hills
+    ['#4CAF50CC','#66BB6ACC','#81C784CC'].forEach((col,i)=>{
+      ctx.beginPath(); ctx.moveTo(0,H);
+      for(let x=0;x<=W;x+=4){const y=H*(0.78-(0.15-i*0.035))+Math.sin(x/W*Math.PI*2.5+i*1.2)*H*(0.15-i*0.035)+Math.sin(x/W*Math.PI*4+i)*H*(0.15-i*0.035)*0.4;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+      ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=col;ctx.fill();
+    });
+    // Rainbow
+    ['rgba(255,0,0,.05)','rgba(255,165,0,.05)','rgba(255,255,0,.05)','rgba(0,200,0,.05)','rgba(0,0,255,.05)','rgba(148,0,211,.05)'].forEach((c,i)=>{
+      ctx.beginPath();ctx.arc(W*0.12,H*0.7,W*0.22-i*7,Math.PI,0);ctx.strokeStyle=c;ctx.lineWidth=9;ctx.stroke();
+    });
+  }
+
+  function loop(){ ctx.clearRect(0,0,W,H); drawBg(); elements.forEach(e=>{e.update();e.draw();}); animId=requestAnimationFrame(loop); }
+  loop();
+
+  const ls=document.getElementById('loginScreen');
+  new MutationObserver(()=>{ if(ls.style.display==='none'){cancelAnimationFrame(animId);} }).observe(ls,{attributes:true,attributeFilter:['style']});
+}
+
+/* ══════════════════════════════════════════════
+   QUOTE MACHINE — Front Gate
+══════════════════════════════════════════════ */
+const GATE_QUOTES = [
+  { text: "Every child, regardless of circumstance, deserves to be seen, heard, and protected.", author: "Kenya Children Act, 2022" },
+  { text: "The best protection any child can have is a system that remembers them — anonymously, securely, always.", author: "KCDB Framework" },
+  { text: "Child protection is not a department. It is a collective responsibility woven into every institution.", author: "DCS Strategic Plan" },
+  { text: "Data without dignity is surveillance. Data with dignity is protection.", author: "DPA 2019 Principles" },
+  { text: "No child should slip through the cracks of a system that exists to catch them.", author: "UNICEF Kenya" },
+  { text: "A child's unique identifier is their safeguard — not their label.", author: "KCDB Design Principles" },
+  { text: "Justice for children begins long before they enter a courtroom.", author: "UN CRC Article 3" },
+  { text: "Anonymisation is not erasure. It is protection with memory.", author: "KCDB Data Framework" },
+  { text: "When agencies share data securely, children fall through fewer gaps.", author: "Interagency Coordination Guide" },
+  { text: "Protect the record. Protect the child. Protect the future.", author: "KCDB Mission" },
+];
+
+let quoteIdx = 0, quoteTimer = null;
+
+function initQuoteMachine(){
+  const total = GATE_QUOTES.length;
+  const dots = document.getElementById('quoteDots');
+  if(dots){
+    dots.innerHTML = GATE_QUOTES.map((_,i)=>`<span class="quote-dot${i===0?' on':''}" id="qdot-${i}"></span>`).join('');
+  }
+  showQuote(0);
+  quoteTimer = setInterval(()=>{ quoteIdx=(quoteIdx+1)%GATE_QUOTES.length; showQuote(quoteIdx); }, 5500);
+}
+
+function showQuote(idx){
+  const q = GATE_QUOTES[idx];
+  const textEl = document.getElementById('quoteText');
+  const authEl = document.getElementById('quoteAuthor');
+  if(textEl){ textEl.style.opacity='0'; setTimeout(()=>{textEl.textContent='"'+q.text+'"'; textEl.style.opacity='1';},200); }
+  if(authEl){ authEl.style.opacity='0'; setTimeout(()=>{authEl.textContent='— '+q.author; authEl.style.opacity='1';},200); }
+  document.querySelectorAll('.quote-dot').forEach((d,i)=>d.classList.toggle('on',i===idx));
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initWorldCanvas();
+  initQuoteMachine();
+});
+</script>
+</body>
+</html>
 
